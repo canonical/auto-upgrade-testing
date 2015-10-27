@@ -6,8 +6,8 @@
   # go to trusty & test then upgrade to the next and test, all without starting
   # afresh.
   test-details:
-    start-release: "precise"
-    end-release: "trusty"
+    start-release: "vivid"
+    end-release: "wily"
     arch: amd64
     pre_upgrade_tests:
       - tests/lts-desktop/pre

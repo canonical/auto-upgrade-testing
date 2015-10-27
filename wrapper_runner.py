@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Ubuntu System Tests
 # Copyright (C) 2014, 2015 Canonical
@@ -18,6 +19,7 @@
 
 # Initial example script for upgrade tests.
 import logging
+import lxc
 import os
 import subprocess
 import tempfile
@@ -65,31 +67,27 @@ def ensure_backends_available(config_details, configure_missing):
     # We expect the details to come through in a defined way, perhaps we should
     # create a list of objects (Named Tuples for instance) to ease a bunch of
     # the checking needed here.
-    # COnfig details should be a list.
+    # Config details should be a list.
 
     # iterate through and find any reference to backend
     issues = []
     backends = dict()
     for test_def in config_details:
-        try:
-            error_if_backend_unavailable(test_def['backend'])
-        except KeyError:
-            if test_def.get('testname', None) is None:
-                issues.append('Test definition requires a \'testname\'.')
-            issues.append(
-                'Test {} does not define a \'backend\''.format(
-                    test_def.get('testname')))
-        except ValueError:
-            # Obviosly do something more useful as well.
-            issues.append(
-                'Backend: {} is unavailable.'.format(test_def['backend'])
-            )
+        error_if_backend_unavailable(test_def)
 
 
-def error_if_backend_unavailable(backend):
+def error_if_backend_unavailable(test_def):
     """Raise ValueError if backend is unavailable in this environment."""
     # Meh, all true for now.
-    return True
+    backend = test_def['backend']
+    release = test_def['test-details']['start-release']
+    if backend == 'lxc':
+        container_name = 'adt-{}'.format(release)
+        if container_name not in lxc.list_containers():
+            cmd = ['adt-build-lxc', 'ubuntu', release]
+            subprocess.check_output(cmd)
+        return container_name
+    raise ValueError('%s backend not supported' % backend)    
 
 
 def prepare_environment(testsuite, temp_file):
@@ -113,7 +111,6 @@ def execute_adt_run(testsuite, temp_file_name):
     # execute_adt_run.
     adt_run_command = get_adt_run_command(
         testsuite, testsuite['backend'], temp_file_name)
-    print(adt_run_command)
     subprocess.check_call(adt_run_command)
 
 
@@ -150,8 +147,10 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
 
 
 def get_backend_run_args(testsuite, backend):
-    # Currently hard coded to lxc && precise.
-    return ['lxc', '-s', 'adt-precise']
+    if backend == 'lxc':
+        return ['lxc', '-s',
+                'adt-{}'.format(testsuite['test-details']['start-release'])]
+    raise ValueError('%s backend not supported' % backend)
 
 
 def main():
