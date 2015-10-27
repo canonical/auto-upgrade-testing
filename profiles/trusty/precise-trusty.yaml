@@ -1,5 +1,5 @@
 ---
-- testname: "My sample test"
+- testname: "Precise->Trusty basic upgrade"
   backend: lxc
 
   # I think this section should be a list so it's possible to start at precise,

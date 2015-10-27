@@ -1,0 +1,69 @@
+auto-upgrade-testing (1:0.166) raring; urgency=low
+
+  [ Adam Conrad ]
+  * Prefer qemu-system (>= 1.3.0) over kvm for the new qemu packages,
+    but keep the alternate dependencies in place for backport users.
+
+  [ Paul Larson ]
+  * Don't report obsolete config files as failure.
+
+  [ Stéphane Graber ]
+  * Replace builtin lxc.py module by the proper python3-lxc upstream
+    module (a backport exists in precise-backports for 12.04 users).
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Sat, 19 Jan 2013 07:14:51 -0700
+
+auto-upgrade-testing (1:0.165) raring-proposed; urgency=low
+
+  [ Michael Vogt ]
+  * add --data-dir=./share argument to make running from the branch
+    easier
+  * pyflake clean
+  * add pyflakes test
+  * depend/build-depend on python3-distupgrade to get the imported
+    versions of DistUpgradeConfigParser.py and utils.py instead of 
+    copies of it
+  * AutoUpgradeTester/UpgradeTestBackendQemu.py:
+    - use the dpkg force-unsafe-io option to make stuff fast 
+
+  [ Dmitrijs Ledkovs ]
+  * Fix Vcs-Bzr URL to be usable with debcheckout
+  * As there are no python specific paths/symlinks, arch:all packages
+    should simply build against python3, have correct forward looking
+    X-Python3-Version and use python3 as shebang. All fixed now, and ready
+    for smooth no-rebuild python3.3 by default transition.
+
+ -- Dmitrijs Ledkovs <dmitrij.ledkov@ubuntu.com>  Wed, 24 Oct 2012 22:52:20 +0100
+
+auto-upgrade-testing (1:0.164) quantal; urgency=low
+
+  * share/post_upgrade_tests/test_python_import.py: Fix CalledProcessError
+    crash when a python module is not shipped by any package any more.
+  * share/post_upgrade_tests/test_python_import.py: Run test under xvfb, so
+    that modules that need a $DISPLAY (such as ccsm) will not fail. Add xvfb
+    dependency for this. (LP: #1024346)
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Fri, 13 Jul 2012 16:14:37 +0200
+
+auto-upgrade-testing (1:0.163) quantal; urgency=low
+
+  [ Michael Terry ]
+  * Initial packaging, adapted from update-manager.
+  * Move binary package auto-upgrade-tester from update-manager source
+    package to this new source.
+  * Open temporary files in text mode (LP: #1021820).
+
+  [ Colin Watson ]
+  * Port to python3
+
+  [ Stéphane Graber ]
+  * Restructure source branch, move all the scripts, profiles,
+    post-upgrade hooks and any other file to
+    /usr/share/auto-upgrade-tester
+  * Add new LXC backend.
+  * Port any remaining code to python3.
+
+  [ Michael Vogt ]
+  * Set default to precise -> quantal upgrade.
+
+ -- Stéphane Graber <stgraber@ubuntu.com>  Wed, 13 Jun 2012 19:33:12 -0400
