@@ -1,0 +1,5 @@
+autopkgtest-upgrade-test (0.1-1) UNRELEASED; urgency=medium
+
+  * Initial release.
+
+ -- Max Brustkern <max@canonical.com>  Tue, 27 Oct 2015 13:57:34 -0400

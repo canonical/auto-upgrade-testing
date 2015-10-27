@@ -1,0 +1,119 @@
+#!/bin/bash
+
+# These 2 will be populated by the wrapper
+# PRE_TESTS_TO_RUN="pre-test-example"
+# POST_TESTS_TO_RUN="post-test-example"
+# PRE_TEST_LOCATION="./pre-tests"
+# POST_TEST_LOCATION="./post-tests"
+
+# This is put in a known place by the wrapper script and contains the details
+# of above (as they will change each run.
+source /tmp/auto_upgrade_test_settings 
+
+HAVE_REBOOTED=$ADT_REBOOT_MARK
+
+STATUS=0
+
+function main() {
+    if [ -z "${HAVE_REBOOTED}" ]; then
+        echo -e "\n>>Starting from the start"
+        echo $(env)
+        # Haven't rebooted.
+        output_running_system
+
+        do_setup
+
+        pre_tests
+
+        do_upgrade
+
+        maybe_reboot
+    else
+        echo -e "\n>>Skipping pre tests as we've rebooted."
+    fi
+
+    # If we have rebooted we pick up from here.
+    output_running_system
+
+    post_tests
+
+    collect_results
+
+    exit $STATUS
+}
+
+function pre_tests() {
+    for test in $PRE_TESTS_TO_RUN; do
+        echo -e "\n>>Running test: ${PRE_TEST_LOCATION}/${test}"
+        ${PRE_TEST_LOCATION}/${test}
+        # Collecting the results of course.
+    done
+}
+
+function post_tests() {
+    for test in $POST_TESTS_TO_RUN; do
+        echo -e "\n>>Running test: ${POST_TEST_LOCATION}/${test}"
+        ${POST_TEST_LOCATION}/${test}
+        # Collecting the results of course.
+    done
+}
+
+function do_setup() {
+    echo -e "\n>>Totally doing some setup stuff."
+}
+
+function do_upgrade() {
+    echo -e "\n>>Attempting to upgrade."
+    # Probably do something different if this is a device etc.
+
+    # copy the profile
+    mkdir -p /etc/update-manager/release-upgrades.d
+    # copy from outside self.profile /etc/update-manager/release-upgrades.d
+
+    # check overrides
+    # *unimplemented
+
+    # set test repo
+    # if it exists, do unimplemented things
+
+    # if apt_conf, then copy in /etc/apt/apt.conf.d
+
+    # setup debconf logging?
+    # check on forceoverride and noninteractive
+
+    # if we have an upgradefilesidr, use it
+    if (false) ; then # derp
+        echo "using the upgradefilesdir!" # herp
+    else
+        export DEBIAN_FRONTEND=noninteractive
+	    # Make sure we have do-release-upgrade
+        apt-get -y --force-yes install openssh-server update-manager-core
+        do-release-upgrade -d -f DistUpgradeViewNonInteractive
+        #    do-release-upgrade -d -f noninteractive
+        STATUS=$?
+    fi
+    echo -e "\n>>Upgrading complete."
+}
+
+function maybe_reboot() {
+    # Check if we actually want to reboot . . .
+    reboot_function="/tmp/autopkgtest-reboot"
+    if [ -f ${reboot_function} ]; then
+        echo -e "\n>>Rebooting the system."
+        $($reboot_function 'upgradetests')
+    else
+        echo -e "\n>>This testbed does not support rebooting."
+    fi
+}
+
+function collect_results() {
+    echo -e "\n>>Collecting results"
+    # get /var/log/dist-upgrade/*
+    # get /var/log/dpkg.log
+}
+
+function output_running_system() {
+    echo -e "\n>>Currently running: $(lsb_release -a)"
+}
+
+main "$@"
