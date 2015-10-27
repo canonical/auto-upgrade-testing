@@ -92,8 +92,8 @@ def error_if_backend_unavailable(test_def):
 
 def prepare_environment(testsuite, temp_file):
     temp_file.write('''# Auto Upgrade Test Configuration
-export PRE_TEST_LOCATION="/tmp/pre_scripts"
-export POST_TEST_LOCATION="/tmp/post_scripts"
+export PRE_TEST_LOCATION="/root/pre_scripts"
+export POST_TEST_LOCATION="/root/post_scripts"
 ''')
     temp_file.write('PRE_TESTS_TO_RUN="{}"\n'.format(
         ','.join(testsuite['test-details']['pre_upgrade_tests'])))
@@ -123,14 +123,14 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
     # many times
     for script in testsuite['test-details']['pre_upgrade_tests']:
         src_script = '{script}'.format(script=script)
-        dest_script = '/tmp/pre_scripts/{}'.format(script)
+        dest_script = '/root/pre_scripts/{}'.format(script)
         copy_cmd = '--copy={src}:{dest}'.format(
             src=src_script, dest=dest_script)
         adt_cmd.append(copy_cmd)
 
     for script in testsuite['test-details']['post_upgrade_tests']:
         src_script = '{script}'.format(script=script)
-        dest_script = '/tmp/post_scripts/{}'.format(script)
+        dest_script = '/root/post_scripts/{}'.format(script)
         copy_cmd = '--copy={src}:{dest}'.format(
             src=src_script, dest=dest_script)
         adt_cmd.append(copy_cmd)
@@ -139,7 +139,7 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
     # test locations.
     # Write temp file with env details in it and source it at the other end.
     adt_cmd.append(
-        '--copy={}:/tmp/auto_upgrade_test_settings'.format(temp_file_name))
+        '--copy={}:/root/auto_upgrade_test_settings'.format(temp_file_name))
 
     backend_args = get_backend_run_args(testsuite, backend)
 

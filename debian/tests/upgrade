@@ -8,7 +8,7 @@
 
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run.
-source /tmp/auto_upgrade_test_settings 
+source /root/auto_upgrade_test_settings 
 
 HAVE_REBOOTED=$ADT_REBOOT_MARK
 
