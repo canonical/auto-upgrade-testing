@@ -20,19 +20,17 @@
 class ProviderBackend:
     """Abstract baseclass for all provision backends."""
 
-    def __init__(self):
+    def __init__(self, **args):
         raise NotImplementedError(
             'Cannot be instatiated, please use an established backend'
         )
 
-    @classmethod
-    def available(cls, **args):
+    def available(self):
         """Return true if there is an instance of this backend that can <> the
         required settings."""
         raise NotImplementedError()
 
-    @classmethod
-    def create(cls, **args):
+    def create(self):
         """Creates an instance of this backend adhering to the provided args.
 
         :raises ValueError: if an instance already exists that matches these
@@ -41,7 +39,6 @@ class ProviderBackend:
         """
         raise NotImplementedError()
 
-    @classmethod
-    def get_adt_run_args(cls, **args):
+    def get_adt_run_args(self):
         """Return a list containing required args to pass to adt-run."""
         raise NotImplementedError()

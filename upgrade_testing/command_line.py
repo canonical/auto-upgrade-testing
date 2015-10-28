@@ -54,27 +54,27 @@ def get_test_def_file(file_path):
         raise
 
 
-def ensure_backends_available(config_details, configure_missing):
-    """Ensure the required backends are available and setup as expected.
+# def ensure_backends_available(config_details, configure_missing):
+#     """Ensure the required backends are available and setup as expected.
 
-    Parse the config details to see which backends are required, for those
-    backends make sure:
-      - They are available
-      - The required arch/release is setup/available
+#     Parse the config details to see which backends are required, for those
+#     backends make sure:
+#       - They are available
+#       - The required arch/release is setup/available
 
-    If there is a requirement not met raise exception. Unless we hve configure
-    missing? Is there a nicer way to do this?
-    """
-    # We expect the details to come through in a defined way, perhaps we should
-    # create a list of objects (Named Tuples for instance) to ease a bunch of
-    # the checking needed here.
-    # Config details should be a list.
+#     If there is a requirement not met raise exception. Unless we hve configure
+#     missing? Is there a nicer way to do this?
+#     """
+#     # We expect the details to come through in a defined way, perhaps we should
+#     # create a list of objects (Named Tuples for instance) to ease a bunch of
+#     # the checking needed here.
+#     # Config details should be a list.
 
-    # iterate through and find any reference to backend
-    issues = []
-    backends = dict()
-    for test_def in config_details:
-        error_if_backend_unavailable(test_def)
+#     # iterate through and find any reference to backend
+#     issues = []
+#     backends = dict()
+#     for test_def in config_details:
+#         error_if_backend_unavailable(test_def)
 
 
 def error_if_backend_unavailable(test_def):
@@ -102,16 +102,19 @@ export POST_TEST_LOCATION="/root/post_scripts"
         ','.join(testsuite['test-details']['post_upgrade_tests'])))
 
 
-def execute_adt_run(testsuite, temp_file_name):
+def execute_adt_run(testsuite, backend, temp_file_name):
     """Prepare the adt-run to execute.
 
     Copy all the files into the expected place etc.
+
+    :param testsuite: Dict containing testsuite details
+    :param backend:  provisioning backend object
+    :param test_file_name: filepath for . . .
     """
     # Huh, do we need to sep. backend out here?
     # Ah yes, there are the test details, that's what should be passed in to
     # execute_adt_run.
-    adt_run_command = get_adt_run_command(
-        testsuite, testsuite['backend'], temp_file_name)
+    adt_run_command = get_adt_run_command(testsuite, backend, temp_file_name)
     subprocess.check_call(adt_run_command)
 
 
@@ -142,17 +145,9 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
     adt_cmd.append(
         '--copy={}:/root/auto_upgrade_test_settings'.format(temp_file_name))
 
-    backend_args = get_backend_run_args(testsuite, backend)
+    backend_args = backend.get_adt_run_args()
 
     return adt_cmd + ['---'] + backend_args
-
-
-def get_backend_run_args(testsuite, backend):
-    if backend == 'lxc':
-        return ['lxc', '-s',
-                'adt-{}'.format(testsuite['test-details']['start-release'])]
-    raise ValueError('%s backend not supported' % backend)
-
 
 def main():
     args = parse_args()
@@ -160,9 +155,24 @@ def main():
     test_def_details = get_test_def_file(args.config)
 
     # ensure_backends_available(test_def_details, args.do_setup)
-    ensure_backends_available(test_def_details, True)
+
+
+    # For each test definition ensure that the required backend is available,
+    # if not either error or create it (depending on args.)
 
     for testsuite in test_def_details:
+        # this could be tidier
+        backend = backends.get_backend(testsuite['backend'])(
+            testsuite['test-details']
+        )
+
+        if not backend.available():
+            if args.do_setup:
+                backend.create()
+            else:
+                logger.error('No available backend for test. . .')
+                continue
+
         temp_file_name = tempfile.mkstemp()[1]
         with open(temp_file_name, 'w') as temp_file:
             prepare_environment(testsuite, temp_file)

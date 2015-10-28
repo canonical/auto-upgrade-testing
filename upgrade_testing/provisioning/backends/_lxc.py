@@ -20,20 +20,8 @@ from upgrade_testing.provisioning.backends._base import ProviderBackend
 
 class LXCBackend(ProviderBackend):
 
-    @classmethod
-    def available(cls, **args):
-        """Return true if an lxc container exists based on requirements in
-        args.
-
+    def __init__(self, **args):
         """
-        release, _, _ = get_required_details(args)
-        container_name = 'adt-{release}'.format(release)
-        return container_name in lxc.list_containers()
-
-    @classmethod
-    def create(cls, *args):
-        """Create an lxc container from provided args.
-
         Required args:
           - release (i.e. Trusty, Precise)
 
@@ -44,31 +32,31 @@ class LXCBackend(ProviderBackend):
         :raises ValueError: If no release is provided.
 
         """
+        try:
+            self.release = args['release']
+        except KeyError:
+            raise ValueError('No release provided.')
 
-        release, arch, dist = get_required_details(args)
+        self.arch = args.get('architecture', None)
+        self.distribution = args.get('distribution', None)
 
-        cmd = ['adt-build-lxc', release, dist, arch]
+    def available(self):
+        """Return true if an lxc container exists that matches the provided
+        args.
+
+        """
+        container_name = 'adt-{release}'.format(self.release)
+        return container_name in lxc.list_containers()
+
+    def create(self):
+        """Create an lxc container."""
+
+        # Currently ignores dist and arch
+        # cmd = ['adt-build-lxc', self.release, self.dist, self.arch]
+        cmd = ['adt-build-lxc', self.release]
+        # Provide further checking here.
         subprocess.check_output(cmd)
 
-    @classmethod
-    def get_adt_run_args(cls, **args):
+    def get_adt_run_args(self):
         # This doesn't currently care about distribution or arch.
-        release, arch, dist = get_required_details(args)
         return return ['lxc', '-s', 'adt-{release}'.format(release)]
-
-def get_required_details(args):
-    """Returns triplet tuple containing sanitised args: release, arch,
-    distribution
-
-    :raises ValueError: if no release is provided
-
-    """
-    try:
-        release = args['release']
-    except KeyError:
-        raise ValueError('No release provided.')
-
-    arch = args.get('architecture', None)
-    distribution = args.get('distribution', None)
-
-    return (release, arch, distribution)

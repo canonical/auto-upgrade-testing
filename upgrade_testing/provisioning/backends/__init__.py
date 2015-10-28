@@ -24,7 +24,7 @@ _backends = dict(lxc=LXCBackend)
 
 
 def get_backend(backend_name):
-    """Return a backend provider for the requested backend.
+    """Return a backend provider class for the requested backend.
 
     :raises ValueError: if backend is unknown.
 
