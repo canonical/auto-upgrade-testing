@@ -27,6 +27,7 @@ import tempfile
 import yaml
 
 from argparse import ArgumentParser
+from textwrap import dedent
 
 
 def parse_args():
@@ -36,6 +37,10 @@ def parse_args():
     parser = ArgumentParser('Run system tests for Upgrade Tests.')
     parser.add_argument('--config', '-c',
                         help='The config file to use for this run.')
+    parser.add_argument('--provision',
+                        default=False,
+                        action='store_true',
+                        help='Provision the requested backend')
     return parser.parse_args()
 
 
@@ -92,17 +97,21 @@ def error_if_backend_unavailable(test_def):
 
 
 def prepare_environment(testsuite, temp_file):
-    temp_file.write('''# Auto Upgrade Test Configuration
-export PRE_TEST_LOCATION="/root/pre_scripts"
-export POST_TEST_LOCATION="/root/post_scripts"
-''')
-    temp_file.write('PRE_TESTS_TO_RUN="{}"\n'.format(
-        ','.join(testsuite['test-details']['pre_upgrade_tests'])))
-    temp_file.write('POST_TESTS_TO_RUN="{}"\n'.format(
-        ','.join(testsuite['test-details']['post_upgrade_tests'])))
+    """Write testrun config details to `temp_file`."""
+    details = testsuite['test-details']-
+    pre_tests = ','.join(details['pre_upgrade_tests'])
+    post_tests = ','.join(details['post_upgrade_tests'])
+    temp_file.write(
+        dedent('''\
+        # Auto Upgrade Test Configuration
+        export PRE_TEST_LOCATION="/root/pre_scripts"
+        export POST_TEST_LOCATION="/root/post_scripts"
+        ''')
+    temp_file.write('PRE_TESTS_TO_RUN="{}"\n'.format(pre_tests))
+    temp_file.write('POST_TESTS_TO_RUN="{}"\n'.format(post_tests))
 
 
-def execute_adt_run(testsuite, backend, temp_file_name):
+def execute_adt_run(testsuite, backend, run_config):
     """Prepare the adt-run to execute.
 
     Copy all the files into the expected place etc.
@@ -111,10 +120,7 @@ def execute_adt_run(testsuite, backend, temp_file_name):
     :param backend:  provisioning backend object
     :param test_file_name: filepath for . . .
     """
-    # Huh, do we need to sep. backend out here?
-    # Ah yes, there are the test details, that's what should be passed in to
-    # execute_adt_run.
-    adt_run_command = get_adt_run_command(testsuite, backend, temp_file_name)
+n    adt_run_command = get_adt_run_command(testsuite, backend, run_config)
     subprocess.check_call(adt_run_command)
 
 
@@ -125,14 +131,15 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
     # adt-run command needs to copy across the the test scripts.
     # the script stuff needs to be de-deuped. No need to copy the same things
     # many times
-    for script in testsuite['test-details']['pre_upgrade_tests']:
+    details = testsuite['test-details']
+    for script in details['pre_upgrade_tests']:
         src_script = '{script}'.format(script=script)
         dest_script = '/root/pre_scripts/{}'.format(script)
         copy_cmd = '--copy={src}:{dest}'.format(
             src=src_script, dest=dest_script)
         adt_cmd.append(copy_cmd)
 
-    for script in testsuite['test-details']['post_upgrade_tests']:
+    for script in details['post_upgrade_tests']:
         src_script = '{script}'.format(script=script)
         dest_script = '/root/post_scripts/{}'.format(script)
         copy_cmd = '--copy={src}:{dest}'.format(
@@ -154,12 +161,8 @@ def main():
 
     test_def_details = get_test_def_file(args.config)
 
-    # ensure_backends_available(test_def_details, args.do_setup)
-
-
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
-
     for testsuite in test_def_details:
         # this could be tidier
         backend = backends.get_backend(testsuite['backend'])(
@@ -167,7 +170,7 @@ def main():
         )
 
         if not backend.available():
-            if args.do_setup:
+            if args.provision:
                 backend.create()
             else:
                 logger.error('No available backend for test. . .')

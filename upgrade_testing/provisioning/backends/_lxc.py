@@ -32,6 +32,9 @@ class LXCBackend(ProviderBackend):
         :raises ValueError: If no release is provided.
 
         """
+        # Currently args won't be this clean, I don't want to have to know the
+        # setup above this call so we will make an intermediately dict/class
+        # that takes care of this stuff.
         try:
             self.release = args['release']
         except KeyError:
