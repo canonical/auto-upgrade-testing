@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Initial example script for upgrade tests.
+from upgrade_testing.provisioning import backends
+
 import logging
 import lxc
 import os
@@ -87,7 +88,7 @@ def error_if_backend_unavailable(test_def):
             cmd = ['adt-build-lxc', 'ubuntu', release]
             subprocess.check_output(cmd)
         return container_name
-    raise ValueError('%s backend not supported' % backend)    
+    raise ValueError('%s backend not supported' % backend)
 
 
 def prepare_environment(testsuite, temp_file):
