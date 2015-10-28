@@ -54,7 +54,7 @@ def get_test_def_file(file_path):
             return yaml.safe_load(f)
     except FileNotFoundError as e:
         err_msg = 'Unable to open config file: {}'.format(file_path)
-        logger.error(err_msg)
+        logging.error(err_msg)
         e.args += (err_msg, )
         raise
 
@@ -67,12 +67,12 @@ def get_test_def_file(file_path):
 #       - They are available
 #       - The required arch/release is setup/available
 
-#     If there is a requirement not met raise exception. Unless we hve configure
-#     missing? Is there a nicer way to do this?
+#     If there is a requirement not met raise exception. Unless we have
+#     configure missing? Is there a nicer way to do this?
 #     """
-#     # We expect the details to come through in a defined way, perhaps we should
-#     # create a list of objects (Named Tuples for instance) to ease a bunch of
-#     # the checking needed here.
+#     # We expect the details to come through in a defined way, perhaps we
+#     # should create a list of objects (Named Tuples for instance) to ease a
+#     # bunch of the checking needed here.
 #     # Config details should be a list.
 
 #     # iterate through and find any reference to backend
@@ -98,7 +98,7 @@ def error_if_backend_unavailable(test_def):
 
 def prepare_environment(testsuite, temp_file):
     """Write testrun config details to `temp_file`."""
-    details = testsuite['test-details']-
+    details = testsuite['test-details']
     pre_tests = ','.join(details['pre_upgrade_tests'])
     post_tests = ','.join(details['post_upgrade_tests'])
     temp_file.write(
@@ -106,7 +106,7 @@ def prepare_environment(testsuite, temp_file):
         # Auto Upgrade Test Configuration
         export PRE_TEST_LOCATION="/root/pre_scripts"
         export POST_TEST_LOCATION="/root/post_scripts"
-        ''')
+        '''))
     temp_file.write('PRE_TESTS_TO_RUN="{}"\n'.format(pre_tests))
     temp_file.write('POST_TESTS_TO_RUN="{}"\n'.format(post_tests))
 
@@ -120,7 +120,7 @@ def execute_adt_run(testsuite, backend, run_config):
     :param backend:  provisioning backend object
     :param test_file_name: filepath for . . .
     """
-n    adt_run_command = get_adt_run_command(testsuite, backend, run_config)
+    adt_run_command = get_adt_run_command(testsuite, backend, run_config)
     subprocess.check_call(adt_run_command)
 
 
@@ -156,6 +156,7 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
 
     return adt_cmd + ['---'] + backend_args
 
+
 def main():
     args = parse_args()
 
@@ -166,20 +167,20 @@ def main():
     for testsuite in test_def_details:
         # this could be tidier
         backend = backends.get_backend(testsuite['backend'])(
-            testsuite['test-details']
+            **testsuite['test-details']
         )
 
         if not backend.available():
             if args.provision:
                 backend.create()
             else:
-                logger.error('No available backend for test. . .')
+                logging.error('No available backend for test. . .')
                 continue
 
         temp_file_name = tempfile.mkstemp()[1]
         with open(temp_file_name, 'w') as temp_file:
             prepare_environment(testsuite, temp_file)
-        execute_adt_run(testsuite, temp_file_name)
+        execute_adt_run(testsuite, backend, temp_file_name)
         os.unlink(temp_file_name)
 
 

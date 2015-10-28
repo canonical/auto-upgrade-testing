@@ -16,7 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import lxc
+import subprocess
+
 from upgrade_testing.provisioning.backends._base import ProviderBackend
+
 
 class LXCBackend(ProviderBackend):
 
@@ -36,19 +40,19 @@ class LXCBackend(ProviderBackend):
         # setup above this call so we will make an intermediately dict/class
         # that takes care of this stuff.
         try:
-            self.release = args['release']
+            self.release = args['start-release']
         except KeyError:
             raise ValueError('No release provided.')
 
         self.arch = args.get('architecture', None)
-        self.distribution = args.get('distribution', None)
+        self.distribution = args.get('distribution', 'ubuntu')
 
     def available(self):
         """Return true if an lxc container exists that matches the provided
         args.
 
         """
-        container_name = 'adt-{release}'.format(self.release)
+        container_name = 'adt-{}'.format(self.release)
         return container_name in lxc.list_containers()
 
     def create(self):
@@ -56,10 +60,10 @@ class LXCBackend(ProviderBackend):
 
         # Currently ignores dist and arch
         # cmd = ['adt-build-lxc', self.release, self.dist, self.arch]
-        cmd = ['adt-build-lxc', self.release]
+        cmd = ['adt-build-lxc', self.distribution, self.release]
         # Provide further checking here.
         subprocess.check_output(cmd)
 
     def get_adt_run_args(self):
         # This doesn't currently care about distribution or arch.
-        return return ['lxc', '-s', 'adt-{release}'.format(release)]
+        return ['lxc', '-s', 'adt-{}'.format(self.release)]
