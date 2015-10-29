@@ -1,0 +1,19 @@
+---
+- testname: "Vivid->Wily basic upgrade"
+  conf_version: 1.0
+  provisioning:
+    backend: lxc
+    arch: amd64
+    distribution: ubuntu
+    # First release is the initial and what will be provisioned.
+    # For each release in the list after that the pre and post scripts will be
+    # run and then the upgrade.
+    releases:
+      - "vivid"
+      - "wily"
+
+  pre_upgrade_scripts:
+    - tests/null
+
+  post_upgrade_tests:
+    - tests/null
