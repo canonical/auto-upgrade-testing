@@ -32,12 +32,27 @@ class TestSpecification:
     """
     def __init__(self, details, provision_settings):
         self.provisioning = provision_settings
+        conf_version = str(details.get('conf_version', None))
+
+        # Rudimentary example of versioned configs.l
+        if conf_version is None:
+            self._reader(details)
+        elif conf_version == "1.0":
+            self._reader_1_0(details)
+
+    def _reader(self, details):
         self.name = details['testname']
         # XXX There is a miss-naming here that needs to be touched up in the
         # schema
         self.pre_upgrade_scripts = details['test-details']['pre_upgrade_tests']
         self.post_upgrade_tests = details['test-details']['post_upgrade_tests']
-        self.architecture = None  # Not sure we need to support this.
+
+    def _reader_1_0(self, details):
+        self.name = details['testname']
+        # XXX There is a miss-naming here that needs to be touched up in the
+        # schema
+        self.pre_upgrade_scripts = details['pre_upgrade_scripts']
+        self.post_upgrade_tests = details['post_upgrade_tests']
 
     def __repr__(self):
         return '{classname}(name={name}, provisioning={prov})'.format(
@@ -57,6 +72,7 @@ class ProvisionSpecification:
           needed. Element 0 will be the starting release.
 
         """
+        # Architecture isn't mentioned here but could be in the future.
         self.backend = backend
         self.distribution = distribution
         if len(releases) == 0:
@@ -66,12 +82,24 @@ class ProvisionSpecification:
 
     @staticmethod
     def from_testspec(spec):
-        # Based off the current schema which will change shortly
-        backend = spec['backend']
-        releases = [
-            spec['test-details']['start-release'],
-            spec['test-details']['end-release']
-        ]
+        # Initial example of being able to version configs.
+        version = str(spec.get('conf_version', None))
+        if version is None:
+            # Based off the current schema which will change shortly
+            backend = spec['backend']
+            releases = [
+                spec['test-details']['start-release'],
+                spec['test-details']['end-release']
+            ]
+        elif version == "1.0":
+            # I think we can match the required details to commandline args so
+            # this could become:
+            # return ProvisionSpecification.from_provisionspec(spec)
+            backend = spec['provisioning']['backend']
+            releases = spec['provisioning']['releases']
+        else:
+            raise ValueError('Insufficent provisioning details.')
+
         return ProvisionSpecification(backend, releases)
 
     @staticmethod
