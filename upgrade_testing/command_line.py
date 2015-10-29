@@ -18,16 +18,17 @@
 #
 
 from upgrade_testing.provisioning import backends
+from upgrade_testing.configspec import definition_reader
 
 import logging
-import lxc
 import os
 import subprocess
 import tempfile
-import yaml
 
 from argparse import ArgumentParser
 from textwrap import dedent
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -44,63 +45,14 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_test_def_file(file_path):
-    """Return datastructure of test definition.
-
-    Reads a yaml file and produces a datastructure of some sort.
-    """
-    try:
-        with open(file_path, 'r') as f:
-            return yaml.safe_load(f)
-    except FileNotFoundError as e:
-        err_msg = 'Unable to open config file: {}'.format(file_path)
-        logging.error(err_msg)
-        e.args += (err_msg, )
-        raise
-
-
-# def ensure_backends_available(config_details, configure_missing):
-#     """Ensure the required backends are available and setup as expected.
-
-#     Parse the config details to see which backends are required, for those
-#     backends make sure:
-#       - They are available
-#       - The required arch/release is setup/available
-
-#     If there is a requirement not met raise exception. Unless we have
-#     configure missing? Is there a nicer way to do this?
-#     """
-#     # We expect the details to come through in a defined way, perhaps we
-#     # should create a list of objects (Named Tuples for instance) to ease a
-#     # bunch of the checking needed here.
-#     # Config details should be a list.
-
-#     # iterate through and find any reference to backend
-#     issues = []
-#     backends = dict()
-#     for test_def in config_details:
-#         error_if_backend_unavailable(test_def)
-
-
-def error_if_backend_unavailable(test_def):
-    """Raise ValueError if backend is unavailable in this environment."""
-    # Meh, all true for now.
-    backend = test_def['backend']
-    release = test_def['test-details']['start-release']
-    if backend == 'lxc':
-        container_name = 'adt-{}'.format(release)
-        if container_name not in lxc.list_containers():
-            cmd = ['adt-build-lxc', 'ubuntu', release]
-            subprocess.check_output(cmd)
-        return container_name
-    raise ValueError('%s backend not supported' % backend)
-
-
 def prepare_environment(testsuite, temp_file):
-    """Write testrun config details to `temp_file`."""
-    details = testsuite['test-details']
-    pre_tests = ','.join(details['pre_upgrade_tests'])
-    post_tests = ','.join(details['post_upgrade_tests'])
+    """Write testrun config details to `temp_file`.
+
+    :param testsuite: TestSpecification instance.
+
+    """
+    pre_tests = ','.join(testsuite.pre_upgrade_scripts)
+    post_tests = ','.join(testsuite.post_upgrade_tests)
     temp_file.write(
         dedent('''\
         # Auto Upgrade Test Configuration
@@ -125,21 +77,25 @@ def execute_adt_run(testsuite, backend, run_config):
 
 
 def get_adt_run_command(testsuite, backend, temp_file_name):
+    """Construct the adt command to run.
+
+    :param testsuite: TestSpecification object containing test run details.
+
+    """
     # Initial testing adt-run hardcoded stuff
     adt_cmd = ['adt-run', '-B', '--user=root', '--unbuilt-tree=.']
 
     # adt-run command needs to copy across the the test scripts.
     # the script stuff needs to be de-deuped. No need to copy the same things
     # many times
-    details = testsuite['test-details']
-    for script in details['pre_upgrade_tests']:
+    for script in testsuite.pre_upgrade_scripts:
         src_script = '{script}'.format(script=script)
         dest_script = '/root/pre_scripts/{}'.format(script)
         copy_cmd = '--copy={src}:{dest}'.format(
             src=src_script, dest=dest_script)
         adt_cmd.append(copy_cmd)
 
-    for script in details['post_upgrade_tests']:
+    for script in testsuite.post_upgrade_tests:
         src_script = '{script}'.format(script=script)
         dest_script = '/root/post_scripts/{}'.format(script)
         copy_cmd = '--copy={src}:{dest}'.format(
@@ -160,22 +116,25 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
 def main():
     args = parse_args()
 
-    test_def_details = get_test_def_file(args.config)
+    # if args.provision_file etc. . .
+    test_def_details = definition_reader(args.config)
 
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
     for testsuite in test_def_details:
-        # this could be tidier
-        backend = backends.get_backend(testsuite['backend'])(
-            **testsuite['test-details']
-        )
+        backend = backends.get_backend(testsuite.provisioning)
 
         if not backend.available():
             if args.provision:
+                logger.info('Creating backend for: {}'.format(backend))
                 backend.create()
             else:
-                logging.error('No available backend for test. . .')
+                logger.error('No available backend for test: {}'.format(
+                    testsuite.name)
+                )
                 continue
+        else:
+            logger.info('Backend "{}" is available.'.format(backend))
 
         temp_file_name = tempfile.mkstemp()[1]
         with open(temp_file_name, 'w') as temp_file:

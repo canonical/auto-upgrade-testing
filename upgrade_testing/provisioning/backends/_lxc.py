@@ -24,46 +24,38 @@ from upgrade_testing.provisioning.backends._base import ProviderBackend
 
 class LXCBackend(ProviderBackend):
 
-    def __init__(self, **args):
-        """
-        Required args:
-          - release (i.e. Trusty, Precise)
+    def __init__(self, provision_spec):
+        """Provide backend capabilities as requested in the provision spec.
 
-        Optional args:
-          - architecture (e.g. i386, amd64) defaults to native architecture.
-          - distribution (either ubuntu or debian) defaults to ubuntu.
-
-        :raises ValueError: If no release is provided.
+        :param provision_spec: ProvisionSpecification object containing backend
+          details.
 
         """
-        # Currently args won't be this clean, I don't want to have to know the
-        # setup above this call so we will make an intermediately dict/class
-        # that takes care of this stuff.
-        try:
-            self.release = args['start-release']
-        except KeyError:
-            raise ValueError('No release provided.')
-
-        self.arch = args.get('architecture', None)
-        self.distribution = args.get('distribution', 'ubuntu')
+        # Grab out the provision details we're interested in. Hmm,
+        self.spec = provision_spec
 
     def available(self):
         """Return true if an lxc container exists that matches the provided
         args.
 
         """
-        container_name = 'adt-{}'.format(self.release)
+        container_name = 'adt-{}'.format(self.spec.initial_release)
         return container_name in lxc.list_containers()
 
     def create(self):
         """Create an lxc container."""
 
-        # Currently ignores dist and arch
-        # cmd = ['adt-build-lxc', self.release, self.dist, self.arch]
-        cmd = ['adt-build-lxc', self.distribution, self.release]
+        cmd = [
+            'adt-build-lxc', self.spec.distribution, self.spec.initial_release
+        ]
         # Provide further checking here.
         subprocess.check_output(cmd)
 
     def get_adt_run_args(self):
-        # This doesn't currently care about distribution or arch.
-        return ['lxc', '-s', 'adt-{}'.format(self.release)]
+        return ['lxc', '-s', 'adt-{}'.format(self.spec.initial_release)]
+
+    def __repr__(self):
+        return '{classname}(release={release})'.format(
+            classname=self.__class__.__name__,
+            release=self.spec.initial_release
+        )

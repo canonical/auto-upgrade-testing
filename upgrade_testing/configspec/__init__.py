@@ -16,23 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.provisioning.backends._lxc import LXCBackend
 
-__all__ = ['get_backend']
+from upgrade_testing.configspec._config import definition_reader
 
-_backends = dict(lxc=LXCBackend)
-
-
-def get_backend(provision_spec):
-    """Return a backend provider class for the requested backend.
-
-    :raises ValueError: if backend is unknown.
-
-    """
-
-    try:
-        return _backends[provision_spec.backend](provision_spec)
-    except KeyError:
-        raise ValueError(
-            'Backend "{}" is unknown'.format(provision_spec.backend)
-        )
+__all__ = ['definition_reader']
