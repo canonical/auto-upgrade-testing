@@ -52,8 +52,7 @@ def test_source_retriever(source_location):
             local_location = _bzr_file_retrieval(source_location)
             needs_cleanup = True
         else:
-            raise
- ValueError('Unknown file protocol')
+            raise ValueError('Unknown file protocol')
         yield local_location
     finally:
         if needs_cleanup:

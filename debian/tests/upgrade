@@ -7,6 +7,10 @@
 # POST_TEST_LOCATION="./post-tests"
 
 SCRIPT_LOCATION='/root/run_scripts/'
+# Currently experimenting with using yaml output for run results (test
+# pass/fail etc.) for now, then we'll use something better
+# Should be some adt known path so we can pull it back across to the testhost.
+TEST_RESULT_FILE='/root/test_results.yaml'
 
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run.
@@ -41,29 +45,54 @@ function main() {
 
     collect_results
 
+    echo -e "\n>>>"
+    cat $TEST_RESULT_FILE
+    echo -e "\n<<<"
+
     exit $STATUS
 }
 
 function pre_tests() {
+    echo "pre_script_output:" >> $TEST_RESULT_FILE
     for test in $PRE_TESTS_TO_RUN; do
         FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
         echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
+        # Actually run the script
         ${FULL_TEST_SCRIPT_PATH}
+
         # Collecting the results of course.
+        test_result=$?
+        if (( test_result != 0 )); then
+            echo "  \"${test}\": FAIL" >> $TEST_RESULT_FILE
+        else
+            echo "  \"${test}\": PASS" >> $TEST_RESULT_FILE
+        fi
     done
 }
 
 function post_tests() {
+    echo "post_test_output:" >> $TEST_RESULT_FILE
     for test in $POST_TESTS_TO_RUN; do
         FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
         echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
+
+        # Actually run the script
         ${FULL_TEST_SCRIPT_PATH}
+
+        test_result=$?
+        if (( test_result != 0 )); then
+            echo "  \"${test}\": FAIL" >> $TEST_RESULT_FILE
+        else
+            echo "  \"${test}\": PASS" >> $TEST_RESULT_FILE
+        fi
         # Collecting the results of course.
     done
 }
 
 function do_setup() {
     echo -e "Totally doing some setup stuff."
+    # Make sure the file is proper yaml.
+    echo "---" >> $TEST_RESULT_FILE
 }
 
 function do_upgrade() {

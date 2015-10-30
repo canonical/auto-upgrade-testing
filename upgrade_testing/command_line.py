@@ -51,8 +51,8 @@ def prepare_environment(testsuite, temp_file):
     :param testsuite: TestSpecification instance.
 
     """
-    pre_tests = ','.join(testsuite.pre_upgrade_scripts)
-    post_tests = ','.join(testsuite.post_upgrade_tests)
+    pre_tests = ' '.join(testsuite.pre_upgrade_scripts)
+    post_tests = ' '.join(testsuite.post_upgrade_tests)
     temp_file.write(
         dedent('''\
         # Auto Upgrade Test Configuration
@@ -73,7 +73,6 @@ def execute_adt_run(testsuite, backend, run_config):
     :param test_file_name: filepath for . . .
     """
     with test_source_retriever(testsuite.test_source) as test_source_dir:
-        import ipdb; ipdb.set_trace()
         adt_run_command = get_adt_run_command(
             testsuite,
             backend,

@@ -21,3 +21,5 @@
 
   post_upgrade_tests:
     - "null"
+    - "test_pass"
+    - "test_fail"
