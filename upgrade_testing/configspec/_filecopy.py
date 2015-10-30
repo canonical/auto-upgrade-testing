@@ -18,6 +18,7 @@
 
 
 import logging
+import os
 import subprocess
 
 from contextlib import contextmanager
@@ -43,15 +44,16 @@ def test_source_retriever(source_location):
 
     """
     needs_cleanup = False
-    if source_location.startswith('file://'):
-        local_location = _local_file_retrieval(source_location)
-    elif source_location.startswith('lp:'):
-        local_location = _bzr_file_retrieval(source_location)
-        needs_cleanup = True
-    else:
-        raise ValueError('Unknown file protocol')
 
     try:
+        if source_location.startswith('file://'):
+            local_location = _local_file_retrieval(source_location)
+        elif source_location.startswith('lp:'):
+            local_location = _bzr_file_retrieval(source_location)
+            needs_cleanup = True
+        else:
+            raise
+ ValueError('Unknown file protocol')
         yield local_location
     finally:
         if needs_cleanup:
@@ -59,7 +61,7 @@ def test_source_retriever(source_location):
 
 
 def _local_file_retrieval(source):
-    return source
+    return os.path.abspath(source.replace('file://', ''))
 
 
 def _bzr_file_retrieval(source):

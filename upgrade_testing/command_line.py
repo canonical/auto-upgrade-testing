@@ -18,7 +18,7 @@
 #
 
 from upgrade_testing.provisioning import backends
-from upgrade_testing.configspec import definition_reader
+from upgrade_testing.configspec import definition_reader, test_source_retriever
 
 import logging
 import os
@@ -72,11 +72,18 @@ def execute_adt_run(testsuite, backend, run_config):
     :param backend:  provisioning backend object
     :param test_file_name: filepath for . . .
     """
-    adt_run_command = get_adt_run_command(testsuite, backend, run_config)
-    subprocess.check_call(adt_run_command)
+    with test_source_retriever(testsuite.test_source) as test_source_dir:
+        import ipdb; ipdb.set_trace()
+        adt_run_command = get_adt_run_command(
+            testsuite,
+            backend,
+            run_config,
+            test_source_dir
+        )
+        subprocess.check_call(adt_run_command)
 
 
-def get_adt_run_command(testsuite, backend, temp_file_name):
+def get_adt_run_command(testsuite, backend, run_config, test_source_dir):
     """Construct the adt command to run.
 
     :param testsuite: TestSpecification object containing test run details.
@@ -85,28 +92,18 @@ def get_adt_run_command(testsuite, backend, temp_file_name):
     # Initial testing adt-run hardcoded stuff
     adt_cmd = ['adt-run', '-B', '--user=root', '--unbuilt-tree=.']
 
-    # adt-run command needs to copy across the the test scripts.
-    # the script stuff needs to be de-deuped. No need to copy the same things
-    # many times
-    for script in testsuite.pre_upgrade_scripts:
-        src_script = '{script}'.format(script=script)
-        dest_script = '/root/pre_scripts/{}'.format(script)
-        copy_cmd = '--copy={src}:{dest}'.format(
-            src=src_script, dest=dest_script)
-        adt_cmd.append(copy_cmd)
-
-    for script in testsuite.post_upgrade_tests:
-        src_script = '{script}'.format(script=script)
-        dest_script = '/root/post_scripts/{}'.format(script)
-        copy_cmd = '--copy={src}:{dest}'.format(
-            src=src_script, dest=dest_script)
-        adt_cmd.append(copy_cmd)
+    # Copy across the test scripts.
+    dest_dir = '/root/run_scripts/'
+    copy_cmd = '--copy={src}:{dest}'.format(
+        src=test_source_dir,
+        dest=dest_dir
+    )
+    adt_cmd.append(copy_cmd)
 
     # Need to get some env vars across to the testbed. Namely tests to run and
     # test locations.
-    # Write temp file with env details in it and source it at the other end.
     adt_cmd.append(
-        '--copy={}:/root/auto_upgrade_test_settings'.format(temp_file_name))
+        '--copy={}:/root/auto_upgrade_test_settings'.format(run_config))
 
     backend_args = backend.get_adt_run_args()
 
@@ -136,11 +133,14 @@ def main():
         else:
             logger.info('Backend "{}" is available.'.format(backend))
 
-        temp_file_name = tempfile.mkstemp()[1]
-        with open(temp_file_name, 'w') as temp_file:
-            prepare_environment(testsuite, temp_file)
-        execute_adt_run(testsuite, backend, temp_file_name)
-        os.unlink(temp_file_name)
+        try:
+            temp_file_name = tempfile.mkstemp()[1]
+            with open(temp_file_name, 'w') as temp_file:
+                prepare_environment(testsuite, temp_file)
+
+            execute_adt_run(testsuite, backend, temp_file_name)
+        finally:
+            os.unlink(temp_file_name)
 
 
 if __name__ == '__main__':

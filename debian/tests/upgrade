@@ -6,9 +6,11 @@
 # PRE_TEST_LOCATION="./pre-tests"
 # POST_TEST_LOCATION="./post-tests"
 
+SCRIPT_LOCATION='/root/run_scripts/'
+
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run.
-source /root/auto_upgrade_test_settings 
+source /root/auto_upgrade_test_settings
 
 HAVE_REBOOTED=$ADT_REBOOT_MARK
 
@@ -16,7 +18,7 @@ STATUS=0
 
 function main() {
     if [ -z "${HAVE_REBOOTED}" ]; then
-        echo -e "\n>>Starting from the start"
+        echo -e "Beginning from the start."
         echo $(env)
         # Haven't rebooted.
         output_running_system
@@ -25,11 +27,11 @@ function main() {
 
         pre_tests
 
-        do_upgrade
+        # do_upgrade
 
         maybe_reboot
     else
-        echo -e "\n>>Skipping pre tests as we've rebooted."
+        echo -e "Skipping pre-tests as we've rebooted."
     fi
 
     # If we have rebooted we pick up from here.
@@ -44,26 +46,28 @@ function main() {
 
 function pre_tests() {
     for test in $PRE_TESTS_TO_RUN; do
-        echo -e "\n>>Running test: ${PRE_TEST_LOCATION}/${test}"
-        ${PRE_TEST_LOCATION}/${test}
+        FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
+        echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
+        ${FULL_TEST_SCRIPT_PATH}
         # Collecting the results of course.
     done
 }
 
 function post_tests() {
     for test in $POST_TESTS_TO_RUN; do
-        echo -e "\n>>Running test: ${POST_TEST_LOCATION}/${test}"
-        ${POST_TEST_LOCATION}/${test}
+        FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
+        echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
+        ${FULL_TEST_SCRIPT_PATH}
         # Collecting the results of course.
     done
 }
 
 function do_setup() {
-    echo -e "\n>>Totally doing some setup stuff."
+    echo -e "Totally doing some setup stuff."
 }
 
 function do_upgrade() {
-    echo -e "\n>>Attempting to upgrade."
+    echo -e "Attempting to upgrade."
     # Probably do something different if this is a device etc.
 
     # copy the profile
@@ -92,28 +96,28 @@ function do_upgrade() {
         #    do-release-upgrade -d -f noninteractive
         STATUS=$?
     fi
-    echo -e "\n>>Upgrading complete."
+    echo -e "Upgrading complete."
 }
 
 function maybe_reboot() {
     # Check if we actually want to reboot . . .
     reboot_function="/tmp/autopkgtest-reboot"
     if [ -f ${reboot_function} ]; then
-        echo -e "\n>>Rebooting the system."
+        echo -e "Rebooting the system."
         $($reboot_function 'upgradetests')
     else
-        echo -e "\n>>This testbed does not support rebooting."
+        echo -e "This testbed does not support rebooting."
     fi
 }
 
 function collect_results() {
-    echo -e "\n>>Collecting results"
+    echo -e "Collecting results"
     # get /var/log/dist-upgrade/*
     # get /var/log/dpkg.log
 }
 
 function output_running_system() {
-    echo -e "\n>>Currently running: $(lsb_release -a)"
+    echo -e "Currently running: $(lsb_release -a)"
 }
 
 main "$@"
