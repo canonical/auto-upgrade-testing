@@ -1,16 +1,10 @@
 #!/bin/bash
 
-# These 2 will be populated by the wrapper
-# PRE_TESTS_TO_RUN="pre-test-example"
-# POST_TESTS_TO_RUN="post-test-example"
-# PRE_TEST_LOCATION="./pre-tests"
-# POST_TEST_LOCATION="./post-tests"
-
 SCRIPT_LOCATION='/root/run_scripts/'
 # Currently experimenting with using yaml output for run results (test
 # pass/fail etc.) for now, then we'll use something better
-# Should be some adt known path so we can pull it back across to the testhost.
-TEST_RESULT_FILE='/root/test_results.yaml'
+TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
+TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run.
@@ -23,8 +17,7 @@ STATUS=0
 function main() {
     if [ -z "${HAVE_REBOOTED}" ]; then
         echo -e "Beginning from the start."
-        echo $(env)
-        # Haven't rebooted.
+        # Haven't rebooted, starting from the beginning.
         output_running_system
 
         do_setup
@@ -35,7 +28,7 @@ function main() {
 
         maybe_reboot
     else
-        echo -e "Skipping pre-tests as we've rebooted."
+        echo -e "Skipping pre-tests as we have rebooted."
     fi
 
     # If we have rebooted we pick up from here.
@@ -45,27 +38,30 @@ function main() {
 
     collect_results
 
-    echo -e "\n>>>"
-    cat $TEST_RESULT_FILE
-    echo -e "\n<<<"
-
     exit $STATUS
 }
 
 function pre_tests() {
-    echo "pre_script_output:" >> $TEST_RESULT_FILE
+    # Script setup and run. For each test:
+    #  - create a output dir for the results and make available to script
+    #  - Run script
+    #  - Log success or failure of script
+    echo "pre_script_output:" >> ${TEST_RESULT_FILE}
     for test in $PRE_TESTS_TO_RUN; do
+
+        this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
+        mkdir "${this_script_results}"
+        export TESTRUN_RESULTS_DIR=$this_script_results
+
         FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
-        echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
-        # Actually run the script
+        echo -e "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
         ${FULL_TEST_SCRIPT_PATH}
 
-        # Collecting the results of course.
         test_result=$?
         if (( test_result != 0 )); then
-            echo "  \"${test}\": FAIL" >> $TEST_RESULT_FILE
+            echo "  \"${test}\": FAIL" >> ${TEST_RESULT_FILE}
         else
-            echo "  \"${test}\": PASS" >> $TEST_RESULT_FILE
+            echo "  \"${test}\": PASS" >> ${TEST_RESULT_FILE}
         fi
     done
 }
@@ -90,9 +86,10 @@ function post_tests() {
 }
 
 function do_setup() {
-    echo -e "Totally doing some setup stuff."
+    echo -e "Performing run setup."
     # Make sure the file is proper yaml.
-    echo "---" >> $TEST_RESULT_FILE
+    mkdir "${TEST_RESULTS_DIR}"
+    echo "---" >> "${TEST_RESULT_FILE}"
 }
 
 function do_upgrade() {
@@ -140,6 +137,7 @@ function maybe_reboot() {
 }
 
 function collect_results() {
+    # Move any files of interest into $TEST_RESULT_DIR
     echo -e "Collecting results"
     # get /var/log/dist-upgrade/*
     # get /var/log/dpkg.log

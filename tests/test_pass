@@ -1,3 +1,4 @@
 #!/bin/sh
 
+echo "Running $0" >> "${TESTRUN_RESULTS_DIR}/test_script.log"
 true
