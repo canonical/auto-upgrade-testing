@@ -34,7 +34,6 @@ class LXCBackend(ProviderBackend):
           details.
 
         """
-        # Grab out the provision details we're interested in. Hmm,
         self.spec = provision_spec
 
     def available(self):
@@ -53,7 +52,7 @@ class LXCBackend(ProviderBackend):
         cmd = 'sudo adt-build-lxc {} {}'.format(
             self.spec.distribution, self.spec.initial_release
         )
-        # Provide further checking here.
+        # TODO: Provide further checking here.
         subprocess.check_output(cmd, shell=True)
 
     def get_adt_run_args(self):
