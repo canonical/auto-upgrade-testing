@@ -68,6 +68,18 @@ def prepare_environment(testsuite, temp_file):
         '''))
     temp_file.write('PRE_TESTS_TO_RUN="{}"\n'.format(pre_tests))
     temp_file.write('POST_TESTS_TO_RUN="{}"\n'.format(post_tests))
+    # Need to store the expected pristine system and the post-upgrade system.
+    # Currently this will only support one upgrade, for first -> final
+    temp_file.write(
+        'INITIAL_SYSTEM_STATE="{}"\n'.format(
+            testsuite.provisioning.initial_release
+        )
+    )
+    temp_file.write(
+        'POST_SYSTEM_STATE="{}"\n'.format(
+            testsuite.provisioning.final_release
+        )
+    )
 
 
 def get_output_dir(args):
@@ -193,13 +205,13 @@ def main():
         output_dir = get_output_dir(args)
 
         try:
-            temp_file_name = tempfile.mkstemp()[1]
-            with open(temp_file_name, 'w') as temp_file:
+            run_config_file = tempfile.mkstemp()[1]
+            with open(run_config_file, 'w') as temp_file:
                 prepare_environment(testsuite, temp_file)
 
-            execute_adt_run(testsuite, backend, temp_file_name, output_dir)
+            execute_adt_run(testsuite, backend, run_config_file, output_dir)
         finally:
-            os.unlink(temp_file_name)
+            os.unlink(run_config_file)
 
         artifacts_directory = os.path.join(
             output_dir, 'artifacts', 'upgrade_run'

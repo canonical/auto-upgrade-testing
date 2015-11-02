@@ -92,6 +92,7 @@ class ProvisionSpecification:
             raise ValueError('No releases were provided')
         self.releases = releases
         self.initial_release = releases[0]
+        self.final_release = releases[-1]
 
     @staticmethod
     def from_testspec(spec):

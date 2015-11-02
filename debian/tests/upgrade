@@ -23,9 +23,11 @@ function main() {
 
         do_setup
 
+        exit_if_not_running_initial_system
+
         pre_tests
 
-        # do_upgrade
+        do_upgrade
 
         maybe_reboot
     else
@@ -34,12 +36,41 @@ function main() {
 
     # If we have rebooted we pick up from here.
     output_running_system
+    exit_if_not_running_post_system
 
     post_tests
 
     collect_results
 
     exit $STATUS
+}
+
+function exit_if_not_running_initial_system() {
+    # This needs to branch if this is a lxc or device run.
+    local running_system=$(_get_running_system_name)
+    echo "Checking that running system (${running_system}) is ${INITIAL_SYSTEM_STATE}"
+    if [ "${INITIAL_SYSTEM_STATE}" != "${running_system}" ]; then
+        echo "ERROR: Expected ${INITIAL_SYSTEM_STATE} got ${running_system}"
+        # Is there a better way than just exiting here?
+        exit 1
+    fi
+}
+
+# Can we de-dupe these methods too?
+function exit_if_not_running_post_system() {
+    # This needs to branch if this is a lxc or device run.
+    local running_system=$(_get_running_system_name)
+    echo "Checking that running system (${running_system}) is ${POST_SYSTEM_STATE}"
+    if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
+        echo "ERROR: Expected ${POST_SYSTEM_STATE} got ${running_system}"
+        # Is there a better way than just exiting here?
+        exit 1
+    fi
+}
+
+function _get_running_system_name() {
+    local release=$(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
+    echo "${release}"
 }
 
 function pre_tests() {
@@ -50,15 +81,15 @@ function pre_tests() {
     echo "pre_script_output:" >> ${TEST_RESULT_FILE}
     for test in $PRE_TESTS_TO_RUN; do
 
-        this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
+        local this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
         mkdir "${this_script_results}"
         export TESTRUN_RESULTS_DIR=$this_script_results
 
-        FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
+        local FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
         echo -e "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
         ${FULL_TEST_SCRIPT_PATH}
 
-        test_result=$?
+        local test_result=$?
         if (( test_result != 0 )); then
             echo "  \"${test}\": FAIL" >> ${TEST_RESULT_FILE}
         else
@@ -74,16 +105,16 @@ function post_tests() {
     #  - Log success or failure of script
     echo "post_test_output:" >> $TEST_RESULT_FILE
     for test in $POST_TESTS_TO_RUN; do
-        this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
+        local this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
         mkdir "${this_script_results}"
         export TESTRUN_RESULTS_DIR=$this_script_results
 
-        FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
+        local FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
         echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
 
         ${FULL_TEST_SCRIPT_PATH}
 
-        test_result=$?
+        local test_result=$?
         if (( test_result != 0 )); then
             echo "  \"${test}\": FAIL" >> $TEST_RESULT_FILE
         else
@@ -100,8 +131,10 @@ function do_setup() {
 }
 
 function do_upgrade() {
-    echo -e "Attempting to upgrade."
-    # Probably do something different if this is a device etc.
+    current='P'
+    target='T'
+    echo -e "Attempting to upgrade from ${current} to ${target}"
+    # Do something different if this is a device etc.
 
     # copy the profile
     mkdir -p /etc/update-manager/release-upgrades.d
