@@ -9,6 +9,7 @@ TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run.
 source /root/auto_upgrade_test_settings
+export TEST_RESULTS_DIR
 
 HAVE_REBOOTED=$ADT_REBOOT_MARK
 
@@ -67,12 +68,19 @@ function pre_tests() {
 }
 
 function post_tests() {
+    # Script setup and run. For each test:
+    #  - create a output dir for the results and make available to script
+    #  - Run script
+    #  - Log success or failure of script
     echo "post_test_output:" >> $TEST_RESULT_FILE
     for test in $POST_TESTS_TO_RUN; do
+        this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
+        mkdir "${this_script_results}"
+        export TESTRUN_RESULTS_DIR=$this_script_results
+
         FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
         echo -e "Running test: ${FULL_TEST_SCRIPT_PATH}"
 
-        # Actually run the script
         ${FULL_TEST_SCRIPT_PATH}
 
         test_result=$?
@@ -81,13 +89,12 @@ function post_tests() {
         else
             echo "  \"${test}\": PASS" >> $TEST_RESULT_FILE
         fi
-        # Collecting the results of course.
     done
 }
 
 function do_setup() {
     echo -e "Performing run setup."
-    # Make sure the file is proper yaml.
+    # Make sure the file is available and proper yaml.
     mkdir "${TEST_RESULTS_DIR}"
     echo "---" >> "${TEST_RESULT_FILE}"
 }
