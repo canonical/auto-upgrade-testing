@@ -16,10 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
 import lxc
 import subprocess
 
 from upgrade_testing.provisioning.backends._base import ProviderBackend
+
+logger = logging.getLogger(__name__)
 
 
 class LXCBackend(ProviderBackend):
@@ -45,11 +48,13 @@ class LXCBackend(ProviderBackend):
     def create(self):
         """Create an lxc container."""
 
-        cmd = [
-            'adt-build-lxc', self.spec.distribution, self.spec.initial_release
-        ]
+        logger.info('Creating lxc container for run.')
+        # Use sudo here as it's needed for building the lxc container.
+        cmd = 'sudo adt-build-lxc {} {}'.format(
+            self.spec.distribution, self.spec.initial_release
+        )
         # Provide further checking here.
-        subprocess.check_output(cmd)
+        subprocess.check_output(cmd, shell=True)
 
     def get_adt_run_args(self):
         return ['lxc', '-s', 'adt-{}'.format(self.spec.initial_release)]
