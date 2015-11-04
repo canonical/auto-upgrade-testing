@@ -23,6 +23,7 @@ from upgrade_testing.configspec import definition_reader, test_source_retriever
 import datetime
 import logging
 import os
+import sys
 import subprocess
 import tempfile
 import yaml
@@ -31,6 +32,20 @@ from argparse import ArgumentParser
 from textwrap import dedent
 
 logger = logging.getLogger(__name__)
+
+
+
+def setup_logging():
+    """Ensure logging is doing something sensible."""
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    ch.setFormatter(formatter)
+    root.addHandler(ch)
 
 
 def parse_args():
@@ -102,7 +117,7 @@ def get_output_dir(args):
     ts_dir = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
     full_path = os.path.join(os.path.abspath(base_dir), ts_dir)
 
-    logger.info('Creating results dir: ', full_path)
+    logger.info('Creating results dir: {}'.format(full_path))
     os.makedirs(full_path, exist_ok=True)
 
     return full_path
@@ -179,6 +194,7 @@ def get_adt_run_command(backend, run_config, test_source_dir, results_dir):
 
 
 def main():
+    setup_logging()
     args = parse_args()
 
     # if args.provision_file etc. . .

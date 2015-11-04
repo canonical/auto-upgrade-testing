@@ -53,7 +53,13 @@ class LXCBackend(ProviderBackend):
             self.spec.distribution, self.spec.initial_release
         )
         # TODO: Provide further checking here.
-        subprocess.check_output(cmd, shell=True)
+        with subprocess.Popen(
+                cmd, shell=True, stdout=subprocess.PIPE,
+                bufsize=1, universal_newlines=True
+        ) as p:
+            for line in p.stdout:
+                logger.info(line.strip('\n'))
+        logger.info('Container created.')
 
     def get_adt_run_args(self):
         return ['lxc', '-s', 'adt-{}'.format(self.spec.initial_release)]
