@@ -49,7 +49,9 @@ class LXCBackend(ProviderBackend):
 
         logger.info('Creating lxc container for run.')
         # Use sudo here as it's needed for building the lxc container.
-        cmd = 'sudo adt-build-lxc {} {}'.format(
+        # No don't use it here, the whole script needs sudo, need to sort the
+        # bzr perms diff.
+        cmd = 'adt-build-lxc {} {}'.format(
             self.spec.distribution, self.spec.initial_release
         )
         # TODO: Provide further checking here.
