@@ -5,6 +5,7 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Build-Depends: debhelper (>= 9),
                dh-python,
                python3-all-dev (>= 3.4),
+               python3-setuptools,
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/autopkgtest-upgrade-testing
 Vcs-Bzr: https://code.launchpad.net/~auto-upgrade-testing-dev/autopkgtest-upgrade-testing/trunk
