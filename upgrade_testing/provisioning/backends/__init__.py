@@ -17,22 +17,6 @@
 #
 
 from upgrade_testing.provisioning.backends._lxc import LXCBackend
+from upgrade_testing.provisioning.backends._device import DeviceBackend
 
-__all__ = ['get_backend']
-
-_backends = dict(lxc=LXCBackend)
-
-
-def get_backend(provision_spec):
-    """Return a backend provider class for the requested backend.
-
-    :raises ValueError: if backend is unknown.
-
-    """
-
-    try:
-        return _backends[provision_spec.backend](provision_spec)
-    except KeyError:
-        raise ValueError(
-            'Backend "{}" is unknown'.format(provision_spec.backend)
-        )
+__all__ = ['LXCBackend', 'DeviceBackend']

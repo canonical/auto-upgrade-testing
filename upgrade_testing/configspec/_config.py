@@ -19,6 +19,8 @@
 import logging
 import yaml
 
+from upgrade_testing.provisioning import backends
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +32,11 @@ class TestSpecification:
 
     i.e. the provisionin parts etc.
     """
-    def __init__(self, details, provision_settings):
-        self.provisioning = provision_settings
+    def __init__(self, details, provision_spec):
+        self.provisioning = provision_spec
         conf_version = str(details.get('conf_version', None))
 
-        # Rudimentary example of versioned configs.l
+        # Rudimentary example of versioned configs.
         try:
             if conf_version is None:
                 self._reader(details)
@@ -76,49 +78,72 @@ class TestSpecification:
 
 
 class ProvisionSpecification:
+    def __init__(self):
+        raise NotImplementedError()
 
-    def __init__(self, backend, releases, distribution='ubuntu'):
-        """Instantiate an object containing Provisioning details.
+    @property
+    def system_states(self):
+        # Note: Rename from releases
+        raise NotImplementedError()
 
-        :param backend: String stating which backend is required.
-        :param releases: List of strings stating which releases will be
-          needed. Element 0 will be the starting release.
+    @property
+    def initial_state(self):
+        """Return the string indicating the required initial system state."""
+        raise NotImplementedError()
 
-        """
-        # Architecture isn't mentioned here but could be in the future.
-        self.backend = backend
-        self.distribution = distribution
-        if len(releases) == 0:
-            raise ValueError('No releases were provided')
-        self.releases = releases
-        self.initial_release = releases[0]
-        self.final_release = releases[-1]
+    @property
+    def final_state(self):
+        """Return the string indicating the required final system state."""
+        raise NotImplementedError()
 
     @staticmethod
     def from_testspec(spec):
-        # Initial example of being able to version configs.
-        version = str(spec.get('conf_version', None))
-        if version is None:
-            # Based off the current schema which will change shortly
-            backend = spec['backend']
-            releases = [
-                spec['test-details']['start-release'],
-                spec['test-details']['end-release']
-            ]
-        elif version == "1.0":
-            # I think we can match the required details to commandline args so
-            # this could become:
-            # return ProvisionSpecification.from_provisionspec(spec)
-            backend = spec['provisioning']['backend']
-            releases = spec['provisioning']['releases']
-        else:
-            raise ValueError('Insufficent provisioning details.')
-
-        return ProvisionSpecification(backend, releases)
+        backend_name = spec['provisioning']['backend']
+        spec_type = get_specification_type(backend_name)
+        return spec_type(spec['provisioning'])
 
     @staticmethod
     def from_provisionspec(spec):
-        pass
+        # A provision spec is almost the same as a testdef provision spec
+        # except it doesn't have the parent stanza.
+        backend_name = spec['backend']
+        spec_type = get_specification_type(backend_name)
+        return spec_type(spec)
+
+
+def get_specification_type(spec_name):
+    __spec_map = dict(
+        lxc=LXCProvisionSpecification,
+        device=DeviceProvisionSpecification
+    )
+    return __spec_map[spec_name]
+
+
+class LXCProvisionSpecification(ProvisionSpecification):
+    def __init__(self, provision_config):
+        # Defaults to ubuntu
+        self.distribution = provision_config.get('distribution', 'ubuntu')
+        self.releases = provision_config['releases']
+
+        self.backend = backends. LXCBackend(
+            self.initial_state,
+            self.distribution
+        )
+
+    @property
+    def system_states(self):
+        # Note: Rename from releases
+        return self.releases
+
+    @property
+    def initial_state(self):
+        """Return the string indicating the required initial system state."""
+        return self.releases[0]
+
+    @property
+    def final_state(self):
+        """Return the string indicating the required final system state."""
+        return self.releases[-1]
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
@@ -126,6 +151,53 @@ class ProvisionSpecification:
             backend=self.backend,
             dist=self.distribution,
             releases=self.releases
+        )
+
+
+class DeviceProvisionSpecification(ProvisionSpecification):
+    def __init__(self, provision_config):
+        try:
+            self.channel = provision_config['channel']
+            self.revisions = provision_config['revisions']
+        except KeyError as e:
+            raise ValueError('Missing config detail: {}'.format(str(e)))
+
+        serial = provision_config.get('serial', None)
+        password = provision_config.get('password', None)
+        self.backend = backends.DeviceBackend(
+            self.channel,
+            self.initial_state,
+            password,
+            serial,
+        )
+
+    def _get_revisions(self, config):
+        return [config['start-revision'], config['end-revision']]
+
+    def _construct_state_string(self, rev):
+        return '{channel}:{rev}'.format(channel=self.channel, rev=rev)
+
+    @property
+    def system_states(self):
+        # Note: Rename from releases
+        return [self._construct_state_string(r) for r in self.revisions]
+
+    @property
+    def initial_state(self):
+        """Return the string indicating the required initial system state."""
+        return self._construct_state_string(self.revisions[0])
+
+    @property
+    def final_state(self):
+        """Return the string indicating the required final system state."""
+        return self._construct_state_string(self.revisions[-1])
+
+    def __repr__(self):
+        return '{classname}(backend={backend}, channel={channel}, revisions={revisions})'.format(  # NOQA
+            classname=self.__class__.__name__,
+            backend=self.backend,
+            channel=self.channel,
+            revisions=self.system_states
         )
 
 
@@ -137,15 +209,7 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     Will raise an exception if this is incorrect.
 
     """
-    # Need a better way to confirm this.
-    if testdef_filepath.endswith('.yaml'):
-        testdef = _read_yaml_config(testdef_filepath)
-    else:
-        raise ValueError(
-            'Unknown configuration file format: {}'.format(
-                testdef_filepath
-            )
-        )
+    testdef = _load_testdef(testdef_filepath)
 
     specs = []
     for test in testdef:
@@ -161,6 +225,18 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
 
         specs.append(TestSpecification(test, provision_details))
     return specs
+
+
+def _load_testdef(testdef_filepath):
+    # Need a better way to confirm this.
+    if testdef_filepath.endswith('.yaml'):
+        return _read_yaml_config(testdef_filepath)
+    else:
+        raise ValueError(
+            'Unknown configuration file format: {}'.format(
+                testdef_filepath
+            )
+        )
 
 
 def _read_yaml_config(filepath):

@@ -27,21 +27,25 @@ logger = logging.getLogger(__name__)
 
 class LXCBackend(ProviderBackend):
 
-    def __init__(self, provision_spec):
+    # We can change the Backends to require just what they need. In this case
+    # it would be distribution, release name (, arch)
+    def __init__(self, release, distribution='ubuntu'):
         """Provide backend capabilities as requested in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
           details.
 
         """
-        self.spec = provision_spec
+        self.release = release
+        self.distro = distribution
 
     def available(self):
         """Return true if an lxc container exists that matches the provided
         args.
 
         """
-        container_name = 'adt-{}'.format(self.spec.initial_release)
+        container_name = 'adt-{}'.format(self.release)
+        logger.info('Checking for {}'.format(container_name))
         return container_name in lxc.list_containers()
 
     def create(self):
@@ -52,7 +56,7 @@ class LXCBackend(ProviderBackend):
         # No don't use it here, the whole script needs sudo, need to sort the
         # bzr perms diff.
         cmd = 'adt-build-lxc {} {}'.format(
-            self.spec.distribution, self.spec.initial_release
+            self.distro, self.release
         )
         # TODO: Provide further checking here.
         with subprocess.Popen(
@@ -64,10 +68,10 @@ class LXCBackend(ProviderBackend):
         logger.info('Container created.')
 
     def get_adt_run_args(self):
-        return ['lxc', '-s', 'adt-{}'.format(self.spec.initial_release)]
+        return ['lxc', '-s', 'adt-{}'.format(self.release)]
 
     def __repr__(self):
         return '{classname}(release={release})'.format(
             classname=self.__class__.__name__,
-            release=self.spec.initial_release
+            release=self.release
         )

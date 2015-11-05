@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.provisioning import backends
 from upgrade_testing.configspec import definition_reader, test_source_retriever
 from upgrade_testing.preparation import prepare_test_environment
 
@@ -119,20 +118,19 @@ def display_results(output_dir):
     print('\n'.join(output))
 
 
-def execute_adt_run(testsuite, backend, testrun_files, output_dir):
+def execute_adt_run(testsuite, testrun_files, output_dir):
     """Prepare the adt-run to execute.
 
     Copy all the files into the expected place etc.
 
     :param testsuite: Dict containing testsuite details
-    :param backend:  provisioning backend object
     :param test_file_name: filepath for . . .
     """
     # we can change 'test_source_retriever' so that it uses the testurn_files
     # and doesn't need to worry about cleanup.
     with test_source_retriever(testsuite.test_source) as test_source_dir:
         adt_run_command = get_adt_run_command(
-            backend,
+            testsuite.provisioning.backend,
             testrun_files,
             test_source_dir,
             output_dir,
@@ -180,31 +178,32 @@ def main():
     setup_logging()
     args = parse_args()
 
-    # if args.provision_file etc. . .
     test_def_details = definition_reader(args.config)
 
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
     for testsuite in test_def_details:
-        backend = backends.get_backend(testsuite.provisioning)
 
-        if not backend.available():
+        testrun_backend = testsuite.provisioning.backend
+        if not testrun_backend.available():
             if args.provision:
-                logger.info('Creating backend for: {}'.format(backend))
-                backend.create()
+                logger.info('Creating backend for: {}'.format(testrun_backend))
+                testrun_backend.create()
             else:
                 logger.error('No available backend for test: {}'.format(
                     testsuite.name)
                 )
                 continue
         else:
-            logger.info('Backend "{}" is available.'.format(backend))
+            logger.info(
+                'Backend "{}" is already available.'.format(testrun_backend)
+            )
 
         # Setup output dir
         output_dir = get_output_dir(args)
 
         with prepare_test_environment(testsuite) as created_files:
-            execute_adt_run(testsuite, backend, created_files, output_dir)
+            execute_adt_run(testsuite, created_files, output_dir)
 
         display_results(output_dir)
 

@@ -93,12 +93,12 @@ def _write_run_config(testsuite, temp_dir):
         # Note: This will only support one upgrade, for first -> final
         f.write(
             'INITIAL_SYSTEM_STATE="{}"\n'.format(
-                testsuite.provisioning.initial_release
+                testsuite.provisioning.initial_state
             )
         )
         f.write(
             'POST_SYSTEM_STATE="{}"\n'.format(
-                testsuite.provisioning.final_release
+                testsuite.provisioning.final_state
             )
         )
     return run_config_file
