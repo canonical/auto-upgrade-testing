@@ -20,6 +20,7 @@ Depends: ${misc:Depends},
          autopkgtest,
          python3-yaml,
          python3-lxc,
+         python3-pkg-resources,
 Description: Test release upgrades in a virtual environment
  A tool to do QA for release upgrades in ubuntu that performs upgrades
  in a virtual environment. LXC is initially supported, with qemu/kvm to come
