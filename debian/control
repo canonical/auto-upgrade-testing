@@ -18,6 +18,7 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          autopkgtest,
+         lxc-templates,
          python3-yaml,
          python3-lxc,
          python3-pkg-resources,
