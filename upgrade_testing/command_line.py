@@ -211,17 +211,16 @@ def _create_autopkg_details(temp_dir):
     source_dir = pkg_resources.resource_filename(
         upgrade_testing.__name__, 'data'
     )
-    src_control_file = os.path.join(source_dir, 'control')
-    dst_control_file = os.path.join(test_dir_tree, 'control')
-    shutil.copyfile(src_control_file, dst_control_file)
 
-    src_test_file = os.path.join(source_dir, 'upgrade')
-    dst_test_file = os.path.join(test_dir_tree, 'upgrade')
-    shutil.copyfile(src_test_file, dst_test_file)
+    def _copy_file(dest, name):
+        """Copy a file from the source data dir to dest."""
+        src = os.path.join(source_dir, name)
+        dst = os.path.join(dest, name)
+        shutil.copyfile(src, dst)
 
-    dummy_changelog = os.path.join(source_dir, 'changelog')
-    dst_changelog = os.path.join(dir_tree, 'changelog')
-    shutil.copyfile(dummy_changelog, dst_changelog)
+    _copy_file(test_dir_tree, 'control')
+    _copy_file(test_dir_tree, 'upgrade')
+    _copy_file(dir_tree, 'changelog')
 
     # Create a couple of empty files.
     dummy_control = os.path.join(dir_tree, 'control')
@@ -240,7 +239,7 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
     adt_cmd = [
         'adt-run',
         '-B',
-        # '--user=root',
+        '--user=root',
         '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),
         '--output-dir={}'.format(results_dir),
     ]
