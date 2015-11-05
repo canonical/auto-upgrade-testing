@@ -19,21 +19,18 @@
 
 from upgrade_testing.provisioning import backends
 from upgrade_testing.configspec import definition_reader, test_source_retriever
+from upgrade_testing.preparation import prepare_test_environment
 
 import datetime
 import logging
 import os
-import pkg_resources
-import shutil
 import sys
 import subprocess
 import tempfile
 import yaml
 
 from argparse import ArgumentParser
-from collections import namedtuple
-from contextlib import contextmanager
-from textwrap import dedent
+
 
 logger = logging.getLogger(__name__)
 
@@ -68,68 +65,6 @@ def parse_args():
         '--results-dir',
         help='Directory to store results generated during the run.')
     return parser.parse_args()
-
-
-TestrunTempFiles = namedtuple(
-    'TestrunTempFiles', ['run_config_file', 'testrun_tmp_dir', 'unbuilt_dir']
-)
-
-
-@contextmanager
-def prepare_test_environment(testsuite):
-    """Return a TestrunTempFiles instance that is cleaned up out of scope.
-
-    :param testsuite: TestSpecification instance.
-
-    """
-
-    try:
-        temp_dir = tempfile.mkdtemp()
-        run_config_path = _write_run_config(testsuite, temp_dir)
-        unbuilt_dir = _create_autopkg_details(temp_dir)
-        logger.info('Unbuilt dir: {}'.format(unbuilt_dir))
-        yield TestrunTempFiles(
-            run_config_file=run_config_path,
-            # Should we create a dir so that it won't interfer?
-            unbuilt_dir=temp_dir,
-            testrun_tmp_dir=temp_dir,
-        )
-    finally:
-        _cleanup_dir(temp_dir)
-
-
-def _cleanup_dir(dir):
-    from shutil import rmtree
-    rmtree(dir)
-
-
-def _write_run_config(testsuite, temp_dir):
-    run_config_file = tempfile.mkstemp(dir=temp_dir)[1]
-    with open(run_config_file, 'w') as f:
-        pre_tests = ' '.join(testsuite.pre_upgrade_scripts)
-        post_tests = ' '.join(testsuite.post_upgrade_tests)
-        f.write(
-            dedent('''\
-            # Auto Upgrade Test Configuration
-            export PRE_TEST_LOCATION="/root/pre_scripts"
-            export POST_TEST_LOCATION="/root/post_scripts"
-            '''))
-        f.write('PRE_TESTS_TO_RUN="{}"\n'.format(pre_tests))
-        f.write('POST_TESTS_TO_RUN="{}"\n'.format(post_tests))
-        # Need to store the expected pristine system and the post-upgrade
-        # system Currently this will only support one upgrade, for first ->
-        # final
-        f.write(
-            'INITIAL_SYSTEM_STATE="{}"\n'.format(
-                testsuite.provisioning.initial_release
-            )
-        )
-        f.write(
-            'POST_SYSTEM_STATE="{}"\n'.format(
-                testsuite.provisioning.final_release
-            )
-        )
-    return run_config_file
 
 
 def get_output_dir(args):
@@ -203,36 +138,6 @@ def execute_adt_run(testsuite, backend, testrun_files, output_dir):
             output_dir,
         )
         subprocess.check_call(adt_run_command)
-
-
-def _create_autopkg_details(temp_dir):
-    # Given a temp dir build the required dir tree and populate it with the
-    # needed files.
-    dir_tree = os.path.join(temp_dir, 'debian')
-    test_dir_tree = os.path.join(dir_tree, 'tests')
-    os.makedirs(test_dir_tree)
-
-    import upgrade_testing
-    # And copy the data files there.
-    source_dir = pkg_resources.resource_filename(
-        upgrade_testing.__name__, 'data'
-    )
-
-    def _copy_file(dest, name):
-        """Copy a file from the source data dir to dest."""
-        src = os.path.join(source_dir, name)
-        dst = os.path.join(dest, name)
-        shutil.copyfile(src, dst)
-
-    _copy_file(test_dir_tree, 'control')
-    _copy_file(test_dir_tree, 'upgrade')
-    _copy_file(dir_tree, 'changelog')
-
-    # Create a couple of empty files.
-    dummy_control = os.path.join(dir_tree, 'control')
-    open(dummy_control, 'a').close()
-
-    return dir_tree
 
 
 def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
