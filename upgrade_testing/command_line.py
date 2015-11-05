@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Ubuntu System Tests
+# Ubuntu Upgrade Testing
 # Copyright (C) 2014, 2015 Canonical
 #
 # This program is free software: you can redistribute it and/or modify
