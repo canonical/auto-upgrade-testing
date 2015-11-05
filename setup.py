@@ -34,7 +34,9 @@ setup(
     url='https://launchpad.net/autopkgtest-upgrade-testing',
     license='GPLv3',
     packages=find_packages(),
-
+    package_data={
+        'upgrade_testing': ['data/*']
+    },
     entry_points={
         'console_scripts': [
             'autopkgtest-upgrade-testing = upgrade_testing.command_line:main'

@@ -27,7 +27,7 @@ function main() {
 
         pre_tests
 
-        # do_upgrade
+        do_upgrade
 
         maybe_reboot
     else
