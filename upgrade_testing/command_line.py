@@ -160,8 +160,14 @@ def get_output_dir(args):
     return full_path
 
 
-def display_results(artifacts_directory):
-    # Read in yaml results file and output results.
+def display_results(output_dir):
+    artifacts_directory = os.path.join(
+        output_dir, 'artifacts', 'upgrade_run'
+    )
+    logger.info(
+        'Results can be found here: {}'.format(artifacts_directory)
+    )
+
     results_yaml = os.path.join(artifacts_directory, 'runner_results.yaml')
     with open(results_yaml, 'r') as f:
         results = yaml.safe_load(f)
@@ -293,21 +299,9 @@ def main():
         output_dir = get_output_dir(args)
 
         with prepare_test_environment(testsuite) as created_files:
-            # Created files is a named tuple that contains:
-            # run_config_file -> file containing details for the run
-            # XXX output_directory ->  Path for output
-            # testrun_tmp_dir -> tmp dir used for the run, can create files
-            # here (i.e. debian/tests/)
-            # Currently output dir is separate
             execute_adt_run(testsuite, backend, created_files, output_dir)
 
-        artifacts_directory = os.path.join(
-            output_dir, 'artifacts', 'upgrade_run'
-        )
-        logger.info(
-            'Results can be found here: {}'.format(artifacts_directory)
-        )
-        display_results(artifacts_directory)
+        display_results(output_dir)
 
 
 if __name__ == '__main__':
