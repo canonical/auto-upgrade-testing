@@ -183,21 +183,16 @@ def main():
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
     for testsuite in test_def_details:
-
-        testrun_backend = testsuite.provisioning.backend
-        if not testrun_backend.available():
+        if not testsuite.provisioning.backend_available():
             if args.provision:
-                logger.info('Creating backend for: {}'.format(testrun_backend))
-                testrun_backend.create()
+                testsuite.provisioning.create()
             else:
-                logger.error('No available backend for test: {}'.format(
-                    testsuite.name)
+                logger.error(
+                    'No available backend for test: {}'.format(testsuite.name)
                 )
                 continue
         else:
-            logger.info(
-                'Backend "{}" is already available.'.format(testrun_backend)
-            )
+            logger.info('Backend is already available.')
 
         # Setup output dir
         output_dir = get_output_dir(args)

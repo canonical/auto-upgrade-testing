@@ -38,6 +38,18 @@ class ProvisionSpecification:
         """Return the string indicating the required final system state."""
         raise NotImplementedError()
 
+    def backend_available(self):
+        """Return True if the provisioning backend is available."""
+        raise NotImplementedError()
+
+    def backend_create(self):
+        """Provision the stored backend."""
+        raise NotImplementedError()
+
+    def get_adt_run_args(self):
+        """Return list with the adt args for this provisioning backend."""
+        raise NotImplementedError()
+
     @staticmethod
     def from_testspec(spec):
         backend_name = spec['provisioning']['backend']
@@ -87,6 +99,18 @@ class LXCProvisionSpecification(ProvisionSpecification):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
 
+    def backend_available(self):
+        """Return True if the provisioning backend is available."""
+        return self.backend.available()
+
+    def backend_create(self):
+        """Provision the stored backend."""
+        return self.backend.create()
+
+    def get_adt_run_args(self):
+        """Return list with the adt args for this provisioning backend."""
+        return self.backend.get_adt_run_args()
+
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
             classname=self.__class__.__name__,
@@ -129,6 +153,18 @@ class DeviceProvisionSpecification(ProvisionSpecification):
     def final_state(self):
         """Return the string indicating the required final system state."""
         return self._construct_state_string(self.revisions[-1])
+
+    def backend_available(self):
+        """Return True if the provisioning backend is available."""
+        return self.backend.available()
+
+    def backend_create(self):
+        """Provision the stored backend."""
+        return self.backend.create()
+
+    def get_adt_run_args(self):
+        """Return list with the adt args for this provisioning backend."""
+        return self.backend.get_adt_run_args()
 
     def __repr__(self):
         return '{classname}(backend={backend}, channel={channel}, revisions={revisions})'.format(  # NOQA
