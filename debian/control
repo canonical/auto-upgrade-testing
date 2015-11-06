@@ -1,4 +1,4 @@
-Source: autopkgtest-upgrade-testing
+Source: auto-upgrade-testing
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
@@ -13,11 +13,11 @@ Homepage: https://launchpad.net/autopkgtest-upgrade-testing
 Vcs-Bzr: https://code.launchpad.net/~auto-upgrade-testing-dev/autopkgtest-upgrade-testing/trunk
 X-Python3-Version: >= 3.3
 
-Package: autopkgtest-upgrade-testing
+Package: auto-upgrade-testing
 Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
-         autopkgtest,
+         autopkgtest (>= 3),
          lxc-templates,
          python3-yaml,
          python3-lxc,
