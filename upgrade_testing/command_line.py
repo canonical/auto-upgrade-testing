@@ -185,7 +185,7 @@ def main():
     for testsuite in test_def_details:
         if not testsuite.provisioning.backend_available():
             if args.provision:
-                testsuite.provisioning.create()
+                testsuite.provisioning.backend_create()
             else:
                 logger.error(
                     'No available backend for test: {}'.format(testsuite.name)
