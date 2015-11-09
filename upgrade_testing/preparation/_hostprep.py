@@ -26,6 +26,8 @@ from collections import namedtuple
 from contextlib import contextmanager
 from textwrap import dedent
 
+from upgrade_testing.preparation._testbed import get_testbed_storage_location
+
 logger = logging.getLogger(__name__)
 
 
@@ -80,12 +82,12 @@ def _write_run_config(testsuite, temp_dir):
     with open(run_config_file, 'w') as f:
         pre_tests = ' '.join(testsuite.pre_upgrade_scripts)
         post_tests = ' '.join(testsuite.post_upgrade_tests)
-        f.write(
-            dedent('''\
+        config_string = dedent('''\
             # Auto Upgrade Test Configuration
-            export PRE_TEST_LOCATION="/root/pre_scripts"
-            export POST_TEST_LOCATION="/root/post_scripts"
-            '''))
+            PRE_TEST_LOCATION="{testbed_location}/pre_scripts"
+            POST_TEST_LOCATION="{testbed_location}/post_scripts"
+        '''.format(testbed_location=get_testbed_storage_location()))
+        f.write(config_string)
         f.write('PRE_TESTS_TO_RUN="{}"\n'.format(pre_tests))
         f.write('POST_TESTS_TO_RUN="{}"\n'.format(post_tests))
         # Need to store the expected pristine system and the post-upgrade

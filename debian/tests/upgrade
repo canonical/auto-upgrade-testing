@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SCRIPT_LOCATION='/root/run_scripts'
+BASE_LOCATION="/tmp/ubuntu-upgrade-testing"
+SCRIPT_LOCATION="${BASE_LOCATION}/run_scripts"
 # Currently experimenting with using yaml output for run results (test
 # pass/fail etc.) for now, then we'll use something better
 TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
@@ -8,14 +9,23 @@ TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run.
-source /root/auto_upgrade_test_settings
+CONFIG_FILE="${BASE_LOCATION}/auto_upgrade_test_settings"
+source "${CONFIG_FILE}"
 export TEST_RESULTS_DIR
 
 HAVE_REBOOTED=$ADT_REBOOT_MARK
 
 STATUS=0
 
+function cleanup() {
+    echo -e "Cleaning up configuration files."
+    rm -r "${BASE_LOCATION}"
+}
+
 function main() {
+    # Ensure we don't have any mix-ups with multiple runs on the same testbed.
+    trap cleanup EXIT
+
     if [ -z "${HAVE_REBOOTED}" ]; then
         echo -e "Beginning from the start."
         # Haven't rebooted, starting from the beginning.
@@ -36,7 +46,7 @@ function main() {
 
     # If we have rebooted we pick up from here.
     output_running_system
-    exit_if_not_running_post_system
+    # exit_if_not_running_post_system
 
     post_tests
 

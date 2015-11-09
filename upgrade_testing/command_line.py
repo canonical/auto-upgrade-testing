@@ -17,8 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.configspec import definition_reader, test_source_retriever
-from upgrade_testing.preparation import prepare_test_environment
+from upgrade_testing.configspec import (
+    definition_reader,
+    test_source_retriever,
+)
+from upgrade_testing.preparation import (
+    get_testbed_storage_location,
+    prepare_test_environment,
+)
 
 import datetime
 import logging
@@ -154,7 +160,9 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
     ]
 
     # Copy across the test scripts.
-    dest_dir = '/root/run_scripts/'
+    dest_dir = '{testbed_location}/run_scripts/'.format(
+        testbed_location=get_testbed_storage_location()
+    )
     copy_cmd = '--copy={src}:{dest}'.format(
         src=test_source_dir,
         dest=dest_dir
@@ -164,8 +172,9 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
     # Need to get some env vars across to the testbed. Namely tests to run and
     # test locations.
     adt_cmd.append(
-        '--copy={}:/root/auto_upgrade_test_settings'.format(
-            testrun_files.run_config_file
+        '--copy={config}:{testbed_location}/auto_upgrade_test_settings'.format(
+            config=testrun_files.run_config_file,
+            testbed_location=get_testbed_storage_location()
         )
     )
 
