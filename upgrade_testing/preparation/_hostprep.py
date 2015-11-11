@@ -103,11 +103,14 @@ def _write_run_config(testsuite, temp_dir):
                 testsuite.provisioning.final_state
             )
         )
+        f.write(
+            'RUNNING_BACKEND={}\n'.format(testsuite.provisioning.backend_name)
+        )
     return run_config_file
 
 
 def _create_autopkg_details(temp_dir):
-    """Create a'dummy' debian dir structure for autopkg testing.
+    """Create a 'dummy' debian dir structure for autopkg testing.
 
     Given a temp dir build the required dir tree and populate it with the
     needed files.

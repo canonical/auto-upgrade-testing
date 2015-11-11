@@ -42,3 +42,7 @@ class ProviderBackend:
     def get_adt_run_args(self):
         """Return a list containing required args to pass to adt-run."""
         raise NotImplementedError()
+
+    @property
+    def name(self):
+        raise NotImplementedError()
