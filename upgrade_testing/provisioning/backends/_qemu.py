@@ -52,12 +52,9 @@ class QemuBackend(ProviderBackend):
         return image_name in os.listdir(CACHE_DIR)
 
     def create(self):
-        """Create an lxc container."""
+        """Create a qemu image."""
 
-        logger.info('Creating lxc container for run.')
-        # Use sudo here as it's needed for building the lxc container.
-        # No don't use it here, the whole script needs sudo, need to sort the
-        # bzr perms diff.
+        logger.info('Creating qemu image for run.')
         cmd = 'adt-buildvm-ubuntu-cloud -a {} -r {} -o {} {}'.format(
             self.arch, self.release, CACHE_DIR, ' '.join(self.build_args),
         )
