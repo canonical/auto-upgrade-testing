@@ -68,7 +68,8 @@ class ProvisionSpecification:
 def get_specification_type(spec_name):
     __spec_map = dict(
         lxc=LXCProvisionSpecification,
-        device=DeviceProvisionSpecification
+        device=DeviceProvisionSpecification,
+        qemu=QemuProvisionSpecification,
     )
     return __spec_map[spec_name]
 
@@ -172,4 +173,56 @@ class DeviceProvisionSpecification(ProvisionSpecification):
             backend=self.backend,
             channel=self.channel,
             revisions=self.system_states
+        )
+
+
+class QemuProvisionSpecification(ProvisionSpecification):
+    def __init__(self, provision_config):
+        self.releases = provision_config['releases']
+        self.arch = provision_config.get('arch', 'amd64')
+        self.image_name = provision_config.get(
+            'image_name', 'adt-{}-{}-cloud.img'.format(self.initial_state,
+                                                       self.arch))
+        self.build_args = provision_config.get('build_args', [])
+
+        self.backend = backends. QemuBackend(
+            self.initial_state,
+            self.arch,
+            self.image_name,
+            self.build_args,
+        )
+
+    @property
+    def system_states(self):
+        # Note: Rename from releases
+        return self.releases
+
+    @property
+    def initial_state(self):
+        """Return the string indicating the required initial system state."""
+        return self.releases[0]
+
+    @property
+    def final_state(self):
+        """Return the string indicating the required final system state."""
+        return self.releases[-1]
+
+    def backend_available(self):
+        """Return True if the provisioning backend is available."""
+        return self.backend.available()
+
+    def backend_create(self):
+        """Provision the stored backend."""
+        return self.backend.create()
+
+    def get_adt_run_args(self):
+        """Return list with the adt args for this provisioning backend."""
+        return self.backend.get_adt_run_args()
+
+    def __repr__(self):
+        return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
+            classname=self.__class__.__name__,
+            backend=self.backend,
+            dist=self.distribution,
+            releases=self.releases
         )

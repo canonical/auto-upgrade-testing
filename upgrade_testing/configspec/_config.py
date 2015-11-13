@@ -29,7 +29,7 @@ class TestSpecification:
 
     :param provision_settings: ProvisionSpecification object.
 
-    i.e. the provisionin parts etc.
+    i.e. the provisioning parts etc.
     """
     def __init__(self, details, provision_spec):
         self.provisioning = provision_spec

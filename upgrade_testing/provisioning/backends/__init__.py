@@ -18,5 +18,6 @@
 
 from upgrade_testing.provisioning.backends._lxc import LXCBackend
 from upgrade_testing.provisioning.backends._device import DeviceBackend
+from upgrade_testing.provisioning.backends._qemu import QemuBackend
 
-__all__ = ['LXCBackend', 'DeviceBackend']
+__all__ = ['LXCBackend', 'DeviceBackend', 'QemuBackend']
