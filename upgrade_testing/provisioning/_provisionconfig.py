@@ -38,11 +38,16 @@ class ProvisionSpecification:
         """Return the string indicating the required final system state."""
         raise NotImplementedError()
 
+    @property
+    def backend_name(self):
+        """Return the name of the provision backend."""
+        return self.backend.name
+
     def backend_available(self):
         """Return True if the provisioning backend is available."""
         raise NotImplementedError()
 
-    def backend_create(self):
+    def create(self):
         """Provision the stored backend."""
         raise NotImplementedError()
 
@@ -98,6 +103,11 @@ class LXCProvisionSpecification(ProvisionSpecification):
     def final_state(self):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
+
+    @property
+    def backend_name(self):
+        """Return the name of the provision backend."""
+        return self.backend.name
 
     def backend_available(self):
         """Return True if the provisioning backend is available."""
