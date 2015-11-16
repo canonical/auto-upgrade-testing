@@ -58,6 +58,7 @@ class QemuBackend(ProviderBackend):
         cmd = 'adt-buildvm-ubuntu-cloud -a {} -r {} -o {} {}'.format(
             self.arch, self.release, CACHE_DIR, ' '.join(self.build_args),
         )
+        print(cmd)
         # TODO: Provide further checking here.
         with subprocess.Popen(
                 cmd, shell=True, stdout=subprocess.PIPE,
