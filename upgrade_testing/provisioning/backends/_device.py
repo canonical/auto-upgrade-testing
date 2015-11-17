@@ -42,21 +42,49 @@ class DeviceBackend(ProviderBackend):
         """Return true if a device is connected that we can flash.
 
         """
-        cmd = ['adb', 'devices']
-        output = subprocess.check_output(cmd, universal_newlines=True)
-        serials = output.split('\n')[1:]  # Skip title line
+        serials = _get_connected_serials()
         if self.serial:
             return self.serial in serials
         else:
-            # Anything that's not an empty string
-            return any(serials)
+            if not any(serials):
+                raise RuntimeError('No devices found.')
+            elif len(serials) > 1:
+                raise RuntimeError(
+                    'Multiple devices found with no serial '
+                    'provided to identify target testbed.'
+                )
+
+            return True
 
     def create(self):
-        """Flash an attached device with the requested specficiations."""
+        """Ensures that the testbed is flashed and ready to use.
 
-        logger.info('Flashing device for run.')
-        logger.warning('No actual command here.')
-        logger.info('Flashing completed..')
+        This includes:
+          - Flashing to the right channel/revision
+          - Altering the device so that it is read/writeable.
+            (This is a requirement for being able to test on it. without using
+            the users directory or tmp. Hmm.)
+
+        """
+
+        required_state = DeviceBackend.format_device_state_string(
+            self.revision,
+            self.channel
+        )
+        actual_state = _get_device_current_state(self.serial)
+
+        if actual_state != required_state:
+            logger.info(
+                'Device not in required state. Flashing device for run.'
+            )
+            logger.warning('No actual command here.')
+            logger.info('Flashing completed..')
+        else:
+            logger.info(
+                'Device is in required state ({}) no need for flashing'.format(
+                    required_state
+                )
+            )
 
     def get_adt_run_args(self):
         cmd = ['ssh', '-s', 'adb', '--', '-p', self.password]
@@ -64,7 +92,49 @@ class DeviceBackend(ProviderBackend):
             cmd = cmd + ['-s', self.serial]
         return cmd
 
+    @property
+    def name(self):
+        return 'device'
+
+    @staticmethod
+    def format_device_state_string(channel, revision):
+        return '{channel}:{rev}'.format(channel=channel, rev=revision)
+
     def __repr__(self):
-        return '{classname}()'.format(
+        return '{classname}(channel={channel} revno={revno})'.format(
             classname=self.__class__.__name__,
+            channel=self.channel,
+            revno=self.revision
         )
+
+
+def _get_connected_serials():
+    cmd = ['adb', 'devices']
+    output = subprocess.check_output(cmd, universal_newlines=True)
+    serials = output.split('\n')[1:]  # Skip title line
+    return [s for s in serials if s != '']
+
+
+def _get_current_device_details(serial=None):
+    if serial is not None:
+        detail_cmd = ['adb', '-s', serial, 'shell', 'system-image-cli', '-i']
+    else:
+        detail_cmd = ['adb', 'shell', 'system-image-cli', '-i']
+
+    try:
+        output = subprocess.check_output(detail_cmd)
+        return {
+            detail[0].replace(' ', '_'): detail[1] for detail in
+            [line.split(':') for line in output.split('\n') if line != '']
+        }
+    except subprocess.CalledProcessError as e:
+        logger.error('Failed to collect device details: '.format(str(e)))
+
+
+def _get_device_current_state(serial=None):
+    """Return {channel}:{rev} detail for the requested device."""
+    image_details = _get_current_device_details(serial)
+    return DeviceBackend.format_device_state_string(
+        channel=image_details['channel'],
+        rev=image_details['version_version']
+    )

@@ -70,6 +70,10 @@ class LXCBackend(ProviderBackend):
     def get_adt_run_args(self):
         return ['lxc', '-s', 'adt-{}'.format(self.release)]
 
+    @property
+    def name(self):
+        return 'lxc'
+
     def __repr__(self):
         return '{classname}(release={release})'.format(
             classname=self.__class__.__name__,

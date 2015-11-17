@@ -16,10 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.preparation._hostprep import prepare_test_environment
-from upgrade_testing.preparation._testbed import get_testbed_storage_location
 
-__all__ = [
-    'get_testbed_storage_location',
-    'prepare_test_environment',
-]
+def get_testbed_storage_location():
+    # Any changes to this location will need to be updated in the autopkgtest
+    # script (TMP_LOCATION var).
+    return '/tmp/ubuntu-upgrade-testing'

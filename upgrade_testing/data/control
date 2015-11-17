@@ -1,3 +1,2 @@
 Tests:  upgrade
-Depends: fakeroot
 Restrictions: allow-stderr

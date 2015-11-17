@@ -38,11 +38,16 @@ class ProvisionSpecification:
         """Return the string indicating the required final system state."""
         raise NotImplementedError()
 
+    @property
+    def backend_name(self):
+        """Return the name of the provision backend."""
+        return self.backend.name
+
     def backend_available(self):
         """Return True if the provisioning backend is available."""
         raise NotImplementedError()
 
-    def backend_create(self):
+    def create(self):
         """Provision the stored backend."""
         raise NotImplementedError()
 
@@ -80,7 +85,7 @@ class LXCProvisionSpecification(ProvisionSpecification):
         self.distribution = provision_config.get('distribution', 'ubuntu')
         self.releases = provision_config['releases']
 
-        self.backend = backends. LXCBackend(
+        self.backend = backends.LXCBackend(
             self.initial_state,
             self.distribution
         )
@@ -100,11 +105,16 @@ class LXCProvisionSpecification(ProvisionSpecification):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
 
+    @property
+    def backend_name(self):
+        """Return the name of the provision backend."""
+        return self.backend.name
+
     def backend_available(self):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def backend_create(self):
+    def create(self):
         """Provision the stored backend."""
         return self.backend.create()
 
@@ -126,11 +136,11 @@ class DeviceProvisionSpecification(ProvisionSpecification):
         try:
             self.channel = provision_config['channel']
             self.revisions = provision_config['revisions']
+            password = provision_config['password']
         except KeyError as e:
             raise ValueError('Missing config detail: {}'.format(str(e)))
 
         serial = provision_config.get('serial', None)
-        password = provision_config.get('password', None)
         self.backend = backends.DeviceBackend(
             self.channel,
             self.initial_state,
@@ -139,7 +149,10 @@ class DeviceProvisionSpecification(ProvisionSpecification):
         )
 
     def _construct_state_string(self, rev):
-        return '{channel}:{rev}'.format(channel=self.channel, rev=rev)
+        return backends.DeviceBackend.format_device_state_string(
+            self.channel,
+            rev
+        )
 
     @property
     def system_states(self):
@@ -155,11 +168,16 @@ class DeviceProvisionSpecification(ProvisionSpecification):
         """Return the string indicating the required final system state."""
         return self._construct_state_string(self.revisions[-1])
 
+    @property
+    def backend_name(self):
+        """Return the name of the provision backend."""
+        return self.backend.name
+
     def backend_available(self):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def backend_create(self):
+    def create(self):
         """Provision the stored backend."""
         return self.backend.create()
 
