@@ -62,7 +62,7 @@ function main() {
 
     # If we have rebooted we pick up from here.
     output_running_system
-    # exit_if_not_running_post_system
+    exit_if_not_running_expected_post_system
 
     post_tests
 
@@ -83,7 +83,7 @@ function exit_if_not_running_initial_system() {
 }
 
 # Can we de-dupe these methods too?
-function exit_if_not_running_post_system() {
+function exit_if_not_running_expected_post_system() {
     # This needs to branch if this is a lxc or device run.
     local running_system=$(_get_running_system_name)
     upgrade_log "Checking that running system (${running_system}) is ${POST_SYSTEM_STATE}"
