@@ -192,7 +192,7 @@ def main():
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
     for testsuite in test_def_details:
-        # This should be
+        # TODO: This could be improved to look something like:
         # testuite.provisioning.prepare(provision=create) # Note this could
         # raise an exception.
         if not testsuite.provisioning.backend_available():
