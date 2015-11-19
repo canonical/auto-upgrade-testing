@@ -1,5 +1,20 @@
 #cloud-config
-apt_update: true
-apt_upgrade: true
+locale: en_US.UTF-8
+password: ubuntu
+chpasswd: { expire: False }
+ssh_pwauth: True
+manage_etc_hosts: True
+runcmd:
+ - sed -i 's/deb-systemd-invoke/true/' /var/lib/dpkg/info/cloud-init.prerm
+ - mount -r /dev/vdb /mnt
+ - env ADT_SETUP_VM_UPGRADE=false ADT_SETUP_VM_POST_COMMAND=''
+     sh /mnt/adt-setup-vm
+ - if grep -q 'net.ifnames=0' /etc/default/grub; then rm /etc/network/interfaces.d/eth0.cfg; printf "auto ens3\\niface ens3 inet dhcp\\n" > /etc/network/interfaces.d/ens3.cfg; fi
+ - umount /mnt
+ - sed -i 's/deb-systemd-invoke/true/' /var/lib/dpkg/info/cloud-init.prerm
+ - (while [ ! -e /var/lib/cloud/instance/boot-finished ]; do sleep 1; done;
+    apt-get -y purge cloud-init; shutdown -P now) &
+apt-update: true
+apt-upgrade: true
 packages:
-  - ubuntu-desktop
+ - ubuntu-desktop^
