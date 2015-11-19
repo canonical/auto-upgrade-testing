@@ -16,12 +16,12 @@ The following supported backends detail their available settings both required a
 LXC
 ---
 
-Ubuntu Device
--------------
+Ubuntu Touch
+------------
 
 This backend supports Ubuntu devices.
 
-Backend name: **device**
+Backend name: **touch**
 
 Required elements
 ~~~~~~~~~~~~~~~~~

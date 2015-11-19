@@ -16,7 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 from upgrade_testing.provisioning import backends
+
+logger = logging.getLogger(__name__)
 
 
 class ProvisionSpecification:
@@ -73,10 +77,14 @@ class ProvisionSpecification:
 def get_specification_type(spec_name):
     __spec_map = dict(
         lxc=LXCProvisionSpecification,
-        device=DeviceProvisionSpecification,
+        touch=TouchProvisionSpecification,
         qemu=QemuProvisionSpecification,
     )
-    return __spec_map[spec_name]
+    try:
+        return __spec_map[spec_name]
+    except KeyError:
+        logger.error('Unknown spec name: {}'.format(spec_name))
+        raise
 
 
 class LXCProvisionSpecification(ProvisionSpecification):
@@ -131,7 +139,7 @@ class LXCProvisionSpecification(ProvisionSpecification):
         )
 
 
-class DeviceProvisionSpecification(ProvisionSpecification):
+class TouchProvisionSpecification(ProvisionSpecification):
     def __init__(self, provision_config):
         try:
             self.channel = provision_config['channel']
@@ -141,7 +149,7 @@ class DeviceProvisionSpecification(ProvisionSpecification):
             raise ValueError('Missing config detail: {}'.format(str(e)))
 
         serial = provision_config.get('serial', None)
-        self.backend = backends.DeviceBackend(
+        self.backend = backends.TouchBackend(
             self.channel,
             self.initial_state,
             password,
@@ -149,7 +157,7 @@ class DeviceProvisionSpecification(ProvisionSpecification):
         )
 
     def _construct_state_string(self, rev):
-        return backends.DeviceBackend.format_device_state_string(
+        return backends.TouchBackend.format_device_state_string(
             self.channel,
             rev
         )

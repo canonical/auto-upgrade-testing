@@ -24,10 +24,10 @@ from upgrade_testing.provisioning.backends._base import ProviderBackend
 logger = logging.getLogger(__name__)
 
 
-class DeviceBackend(ProviderBackend):
+class TouchBackend(ProviderBackend):
 
     def __init__(self, channel, revision, password, serial=None):
-        """Provide backend capabilities as requested in the provision spec.
+        """Provide Touch device capabilities as defined in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
           details.
@@ -67,7 +67,7 @@ class DeviceBackend(ProviderBackend):
 
         """
 
-        required_state = DeviceBackend.format_device_state_string(
+        required_state = TouchBackend.format_device_state_string(
             self.revision,
             self.channel
         )
@@ -94,7 +94,7 @@ class DeviceBackend(ProviderBackend):
 
     @property
     def name(self):
-        return 'device'
+        return 'touch'
 
     @staticmethod
     def format_device_state_string(channel, revision):
@@ -134,7 +134,7 @@ def _get_current_device_details(serial=None):
 def _get_device_current_state(serial=None):
     """Return {channel}:{rev} detail for the requested device."""
     image_details = _get_current_device_details(serial)
-    return DeviceBackend.format_device_state_string(
+    return TouchBackend.format_device_state_string(
         channel=image_details['channel'],
         rev=image_details['version_version']
     )
