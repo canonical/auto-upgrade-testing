@@ -33,29 +33,15 @@ class TestSpecification:
     """
     def __init__(self, details, provision_spec):
         self.provisioning = provision_spec
-        conf_version = str(details.get('conf_version', None))
 
-        # Rudimentary example of versioned configs.
         try:
-            if conf_version is None:
-                self._reader(details)
-            elif conf_version == "1.0":
-                self._reader_1_0(details)
+            self._reader(details)
         except KeyError as e:
             logger.error(
                 'Missing required configuration detail: {}'.format(str(e))
             )
 
     def _reader(self, details):
-        self.name = details['testname']
-        # XXX There is a miss-naming here that needs to be touched up in the
-        # schema
-        self.pre_upgrade_scripts = details['test-details']['pre_upgrade_tests']
-        self.post_upgrade_tests = details['test-details']['post_upgrade_tests']
-        # This will cause issues! Perhaps we need to deprecate non 1.0 config.
-        self._test_source_dir = './'
-
-    def _reader_1_0(self, details):
         self.name = details['testname']
         self.pre_upgrade_scripts = details['pre_upgrade_scripts']
         self.post_upgrade_tests = details['post_upgrade_tests']
