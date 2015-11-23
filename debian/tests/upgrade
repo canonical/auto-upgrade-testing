@@ -96,7 +96,10 @@ function exit_if_not_running_post_system() {
 
 function _get_running_system_name() {
     if running_on_touch_device; then
-        echo "ubuntu-touch/rc-proposed/bq-aquaris.en:157"
+        local image_detail=$(system-image-cli -i)
+        local revno=$(echo "${image_detail}" | awk '/version\ version:/ {print $3}')
+        local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
+        echo "${channel}:${revno}"
     else
         echo $(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
     fi
@@ -253,7 +256,10 @@ function running_on_touch_device() {
 function output_running_system() {
     if running_on_touch_device; then
         # Return a string like: {channel}:{rev}
-        echo "ubuntu-touch/rc-proposed/bq-aquaris.en:157"
+        local image_detail=$(system-image-cli -i)
+        local revno=$(echo "${image_detail}" | awk '/version\ version:/ {print $3}')
+        local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
+        echo "${channel}:${revno}"
     else
         echo "Currently running: $(lsb_release -a)"
     fi
