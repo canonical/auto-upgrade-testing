@@ -9,7 +9,7 @@ TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 
 # Only copy on the first run through
-if [ ! -f "${BASE_LOCATION}" ]; then
+if [ ! -d "${BASE_LOCATION}" ]; then
    mkdir "${BASE_LOCATION}"
    mv "${TMP_LOCATION}/run_scripts" "${BASE_LOCATION}"
    mv "${TMP_LOCATION}/auto_upgrade_test_settings" "${BASE_LOCATION}"
