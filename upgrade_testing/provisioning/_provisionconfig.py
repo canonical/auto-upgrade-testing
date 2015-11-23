@@ -150,7 +150,6 @@ class TouchProvisionSpecification(ProvisionSpecification):
 
         serial = provision_config.get('serial', None)
         self.backend = backends.TouchBackend(
-            self.channel,
             self.initial_state,
             password,
             serial,

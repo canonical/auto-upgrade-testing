@@ -19,5 +19,11 @@
 
 from upgrade_testing.configspec._config import definition_reader
 from upgrade_testing.configspec._filecopy import test_source_retriever
+from upgrade_testing.configspec._utils import get_file_data_location
 
-__all__ = ['definition_reader', 'test_source_retriever']
+
+__all__ = [
+    'definition_reader',
+    'get_file_data_location',
+    'test_source_retriever',
+]

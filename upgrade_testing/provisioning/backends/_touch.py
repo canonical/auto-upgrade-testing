@@ -17,44 +17,45 @@
 #
 
 import logging
+import os
 import subprocess
 
+from upgrade_testing.configspec import get_file_data_location
 from upgrade_testing.provisioning.backends._base import ProviderBackend
+from upgrade_testing.provisioning._util import run_command_with_logged_output
 
 logger = logging.getLogger(__name__)
 
 
 class TouchBackend(ProviderBackend):
 
-    def __init__(self, channel, revision, password, serial=None):
+    def __init__(self, initial_state, password, serial=None):
         """Provide Touch device capabilities as defined in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
           details.
 
         """
-        self.channel = channel
-        self.revision = revision
+        self.channel, self.revision = initial_state.split(':')
         self.serial = serial
         self.password = password
+
+        # TODO: Might require recovery file
+        self.recovery_file = None
 
     def available(self):
         """Return true if a device is connected that we can flash.
 
         """
-        serials = _get_connected_serials()
-        if self.serial:
-            return self.serial in serials
-        else:
-            if not any(serials):
-                raise RuntimeError('No devices found.')
-            elif len(serials) > 1:
-                raise RuntimeError(
-                    'Multiple devices found with no serial '
-                    'provided to identify target testbed.'
-                )
+        return _device_connected(self.serial)
 
-            return True
+    def _device_in_required_state(self):
+        required_state = TouchBackend.format_device_state_string(
+            self.channel,
+            self.revision
+        )
+        actual_state = _get_device_current_state(self.serial)
+        return required_state == actual_state
 
     def create(self):
         """Ensures that the testbed is flashed and ready to use.
@@ -67,29 +68,66 @@ class TouchBackend(ProviderBackend):
 
         """
 
-        required_state = TouchBackend.format_device_state_string(
-            self.revision,
-            self.channel
-        )
-        actual_state = _get_device_current_state(self.serial)
+        if self._device_in_required_state():
+            logger.info('Device is already in required state')
+            return
 
-        if actual_state != required_state:
-            logger.info(
-                'Device not in required state. Flashing device for run.'
-            )
-            logger.warning('No actual command here.')
-            logger.info('Flashing completed..')
+        if not self.available():
+            err = 'No device available to flash.'
+            logger.error(err)
+            raise RuntimeError(err)
+
+        logger.info('Preparing to flash device')
+
+        self._put_device_in_bootloader()
+        flash_cmd = self._get_flash_command()
+        run_command_with_logged_output(flash_cmd)
+
+        logger.info('Flashing completed..')
+
+    def _put_device_in_bootloader(self):
+        logger.info('Putting device into bootloader')
+        if self.serial is not None:
+            cmd = ['adt', '-s', self.serial, 'reboot', 'bootloader']
         else:
-            logger.info(
-                'Device is in required state ({}) no need for flashing'.format(
-                    required_state
-                )
-            )
+            cmd = ['adt', 'reboot', 'bootloader']
 
-    def get_adt_run_args(self):
-        cmd = ['ssh', '-s', 'adb', '--', '-p', self.password]
+        run_command_with_logged_output(cmd)
+
+    def _get_flash_command(self):
+        cmd = [
+            'ubuntu-device-flash',
+            '--revision', self.revision,
+            'touch',
+            '--bootstrap',
+            '--developer-mode',
+            '--password', self.password,
+            '--channel', self.channel,
+        ]
+        if self.serial is not None:
+            cmd.extend(['--serial', self.serial])
+        if self.recovery_file is not None:
+            cmd.extend(['--recovery-image', self.recovery_file])
+        return cmd
+
+    def get_adt_run_args(self, **kwargs):
+        try:
+            tmp_dir = os.path.join(kwargs['tmp_dir'], 'identity')
+            os.makedirs(tmp_dir)
+        except KeyError:
+            logger.error('Require tmp_dir is required for Touch backend.')
+            raise
+
+        adb_script = _get_adb_script_location()
+        logger.info('Using adb: {}'.format(adb_script))
+        cmd = [
+            'ssh', '-s', adb_script,
+            '--', '-p', self.password,
+            '--identity', tmp_dir
+        ]
         if self.serial is not None:
             cmd = cmd + ['-s', self.serial]
+        logger.info('Touch adt command: {}'.format(cmd))
         return cmd
 
     @property
@@ -98,7 +136,10 @@ class TouchBackend(ProviderBackend):
 
     @staticmethod
     def format_device_state_string(channel, revision):
-        return '{channel}:{rev}'.format(channel=channel, rev=revision)
+        return '{channel}:{revision}'.format(
+            channel=channel,
+            revision=revision
+        )
 
     def __repr__(self):
         return '{classname}(channel={channel} revno={revno})'.format(
@@ -106,6 +147,41 @@ class TouchBackend(ProviderBackend):
             channel=self.channel,
             revno=self.revision
         )
+
+
+def _device_connected(serial):
+    serials = _get_connected_serials()
+
+    if not any(serials):
+        raise RuntimeError('No Touch devices found.')
+
+    if serial is not None:
+        # Looking for a specific device.
+        return serial in serials
+    else:
+        if len(serials) > 1:
+            raise RuntimeError(
+                'Multiple devices found with no serial '
+                'provided to identify target testbed.'
+            )
+
+        # There is a device connected.
+        return True
+    return False
+
+
+def _get_adb_script_location():
+    """Return path to adb script.
+
+    We ship a customised adb script currently that adds some features we
+    need. This will change in the future at some point when this is upstreamed.
+
+    """
+    adb_script = os.path.join(get_file_data_location(), 'adb')
+    logger.info('Looking for adb script at: {}'.format(adb_script))
+    if os.path.exists(adb_script):
+        return adb_script
+    return 'adb'
 
 
 def _get_connected_serials():
@@ -122,7 +198,7 @@ def _get_current_device_details(serial=None):
         detail_cmd = ['adb', 'shell', 'system-image-cli', '-i']
 
     try:
-        output = subprocess.check_output(detail_cmd)
+        output = subprocess.check_output(detail_cmd, universal_newlines=True)
         return {
             detail[0].replace(' ', '_'): detail[1] for detail in
             [line.split(':') for line in output.split('\n') if line != '']
@@ -136,5 +212,5 @@ def _get_device_current_state(serial=None):
     image_details = _get_current_device_details(serial)
     return TouchBackend.format_device_state_string(
         channel=image_details['channel'],
-        rev=image_details['version_version']
+        revison=image_details['version_version']
     )

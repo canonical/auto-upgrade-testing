@@ -16,10 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.provisioning._provisionconfig import (
-    ProvisionSpecification
-)
-from upgrade_testing.provisioning._util import run_command_with_logged_output
+import pkg_resources
 
 
-__all__ = ['ProvisionSpecification', 'run_command_with_logged_output']
+def get_file_data_location():
+    import upgrade_testing
+    return pkg_resources.resource_filename(
+        upgrade_testing.__name__, 'data'
+    )

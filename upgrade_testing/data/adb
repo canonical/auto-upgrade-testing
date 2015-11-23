@@ -100,7 +100,6 @@ open() {
     ssh-keygen -f ${KNOWNHOSTS_LOCATION}/known_hosts -R [localhost]:$PORT 2>/dev/null || true
 
     if [ ! -e $IDENTITY ]; then
-        # IDENTITY=$HOME/.ssh/id_autopkgtest
         IDENTITY=${KNOWNHOSTS_LOCATION}/id_autopkgtest
         if [ ! -e $IDENTITY ]; then
             echo "No default ssh key, generating $IDENTITY" >&2
@@ -287,7 +286,7 @@ cleanup() {
 
 # argument parsing
 SHORTOPTS="l:,p:,s:,w,r,b"
-LONGOPTS="login:,password:,serial:,rw,apt-update,reset,reboot,no-reset,fwd-port:,keep-screen-active"
+LONGOPTS="login:,password:,serial:,rw,apt-update,reset,reboot,no-reset,fwd-port:,keep-screen-active,identity:"
 
 TEMP=$(getopt -o $SHORTOPTS --long $LONGOPTS -- "$@")
 eval set -- "$TEMP"
@@ -322,6 +321,9 @@ while true; do
         --keep-screen-active)
             KEEP_POWERD_CLI="$1"
             shift;;
+        --identity)
+            KNOWNHOSTS_LOCATION="$2"
+            shift 2;;
         --)
             shift;
             break;;

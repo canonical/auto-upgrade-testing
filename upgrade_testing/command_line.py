@@ -147,7 +147,10 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
 def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
     """Construct the adt command to run.
 
-    :param testsuite: TestSpecification object containing test run details.
+    :param backend:
+    :param testrun_files: is the named tuple that contains testrun_tmp_dir
+    :param test_source_dir:
+    :param results_dir:
 
     """
     # Default adt-run hardcoded adt command
@@ -178,7 +181,7 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
         )
     )
 
-    backend_args = backend.get_adt_run_args()
+    backend_args = backend.get_adt_run_args(testrun_files.testrun_tmp_dir)
 
     return adt_cmd + ['---'] + backend_args
 
@@ -197,6 +200,7 @@ def main():
         # raise an exception.
         if not testsuite.provisioning.backend_available():
             if args.provision:
+                logger.debug('Provising backend.')
                 testsuite.provisioning.backend_create()
             else:
                 logger.error(
@@ -204,15 +208,15 @@ def main():
                 )
                 continue
         else:
-            logger.info('Backend is already available.')
+            logger.info('Backend is available.')
 
         # Setup output dir
-        output_dir = get_output_dir(args)
+        # output_dir = get_output_dir(args)
 
-        with prepare_test_environment(testsuite) as created_files:
-            execute_adt_run(testsuite, created_files, output_dir)
+        # with prepare_test_environment(testsuite) as created_files:
+        #     execute_adt_run(testsuite, created_files, output_dir)
 
-        display_results(output_dir)
+        # display_results(output_dir)
 
 
 if __name__ == '__main__':

@@ -16,10 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.provisioning._provisionconfig import (
-    ProvisionSpecification
-)
-from upgrade_testing.provisioning._util import run_command_with_logged_output
+import logging
+import subprocess
+
+logger = logging.getLogger(__name__)
 
 
-__all__ = ['ProvisionSpecification', 'run_command_with_logged_output']
+def run_command_with_logged_output(command):
+    logger.debug('Running command: {}'.format(command))
+    with subprocess.Popen(
+            command, stdout=subprocess.PIPE,
+            bufsize=1, universal_newlines=True
+    ) as p:
+        for line in p.stdout:
+            logger.info(line.strip('\n'))
