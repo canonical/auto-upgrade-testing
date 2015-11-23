@@ -157,6 +157,7 @@ function do_upgrade() {
     else
         export DEBIAN_FRONTEND=noninteractive
 	    # Make sure we have do-release-upgrade
+        apt-get update
         apt-get -y --force-yes install openssh-server update-manager-core
         do-release-upgrade -d -f DistUpgradeViewNonInteractive
         #    do-release-upgrade -d -f noninteractive
