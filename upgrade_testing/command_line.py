@@ -181,7 +181,9 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
         )
     )
 
-    backend_args = backend.get_adt_run_args(testrun_files.testrun_tmp_dir)
+    backend_args = backend.get_adt_run_args(
+        tmp_dir=testrun_files.testrun_tmp_dir
+    )
 
     return adt_cmd + ['---'] + backend_args
 
@@ -190,7 +192,13 @@ def main():
     setup_logging()
     args = parse_args()
 
-    test_def_details = definition_reader(args.config)
+    try:
+        test_def_details = definition_reader(args.config)
+    except KeyError:
+        logger.error(
+            'Unable to parse configuration file: {}'.format(args.config)
+        )
+        exit(1)
 
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
@@ -201,7 +209,7 @@ def main():
         if not testsuite.provisioning.backend_available():
             if args.provision:
                 logger.debug('Provising backend.')
-                testsuite.provisioning.backend_create()
+                testsuite.provisioning.create()
             else:
                 logger.error(
                     'No available backend for test: {}'.format(testsuite.name)
@@ -211,12 +219,12 @@ def main():
             logger.info('Backend is available.')
 
         # Setup output dir
-        # output_dir = get_output_dir(args)
+        output_dir = get_output_dir(args)
 
-        # with prepare_test_environment(testsuite) as created_files:
-        #     execute_adt_run(testsuite, created_files, output_dir)
+        with prepare_test_environment(testsuite) as created_files:
+            execute_adt_run(testsuite, created_files, output_dir)
 
-        # display_results(output_dir)
+        display_results(output_dir)
 
 
 if __name__ == '__main__':

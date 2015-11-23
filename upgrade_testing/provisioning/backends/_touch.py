@@ -20,7 +20,7 @@ import logging
 import os
 import subprocess
 
-from upgrade_testing.configspec import get_file_data_location
+from upgrade_testing.configspec._utils import get_file_data_location
 from upgrade_testing.provisioning.backends._base import ProviderBackend
 from upgrade_testing.provisioning._util import run_command_with_logged_output
 
@@ -44,10 +44,13 @@ class TouchBackend(ProviderBackend):
         self.recovery_file = None
 
     def available(self):
-        """Return true if a device is connected that we can flash.
+        """Return true if a device is connected and it's in the desired state.
 
         """
-        return _device_connected(self.serial)
+        return (
+            _device_connected(self.serial)
+            and self._device_in_required_state()
+        )
 
     def _device_in_required_state(self):
         required_state = TouchBackend.format_device_state_string(
@@ -72,7 +75,7 @@ class TouchBackend(ProviderBackend):
             logger.info('Device is already in required state')
             return
 
-        if not self.available():
+        if not _device_connected(self.serial):
             err = 'No device available to flash.'
             logger.error(err)
             raise RuntimeError(err)
@@ -88,9 +91,9 @@ class TouchBackend(ProviderBackend):
     def _put_device_in_bootloader(self):
         logger.info('Putting device into bootloader')
         if self.serial is not None:
-            cmd = ['adt', '-s', self.serial, 'reboot', 'bootloader']
+            cmd = ['adb', '-s', self.serial, 'reboot', 'bootloader']
         else:
-            cmd = ['adt', 'reboot', 'bootloader']
+            cmd = ['adb', 'reboot', 'bootloader']
 
         run_command_with_logged_output(cmd)
 
@@ -212,5 +215,5 @@ def _get_device_current_state(serial=None):
     image_details = _get_current_device_details(serial)
     return TouchBackend.format_device_state_string(
         channel=image_details['channel'],
-        revison=image_details['version_version']
+        revision=image_details['version_version']
     )

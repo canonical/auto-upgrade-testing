@@ -83,6 +83,8 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     specification otherwise collects these details from the testspec.
     Will raise an exception if this is incorrect.
 
+    :raises KeyError: if there is any invalid or unknown config details.
+
     """
     testdef = _load_testdef(testdef_filepath)
 

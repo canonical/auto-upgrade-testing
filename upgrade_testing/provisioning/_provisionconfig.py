@@ -55,7 +55,7 @@ class ProvisionSpecification:
         """Provision the stored backend."""
         raise NotImplementedError()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         raise NotImplementedError()
 
@@ -126,9 +126,9 @@ class LXCProvisionSpecification(ProvisionSpecification):
         """Provision the stored backend."""
         return self.backend.create()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args()
+        return self.backend.get_adt_run_args(kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
@@ -188,9 +188,9 @@ class TouchProvisionSpecification(ProvisionSpecification):
         """Provision the stored backend."""
         return self.backend.create()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args()
+        return self.backend.get_adt_run_args(kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, channel={channel}, revisions={revisions})'.format(  # NOQA
@@ -236,13 +236,13 @@ class QemuProvisionSpecification(ProvisionSpecification):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def backend_create(self):
+    def create(self):
         """Provision the stored backend."""
         return self.backend.create()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args()
+        return self.backend.get_adt_run_args(kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
