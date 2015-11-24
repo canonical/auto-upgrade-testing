@@ -3,8 +3,8 @@
   conf_version: 1.0
   provisioning:
     backend: qemu
-    arch: amd64
-    image_name: wily_xenial_basic.img
+    arch: i386
+    image_name: wily_xenial_basic_i386.img
     # First release is the initial and what will be provisioned.
     # For each release in the list after that the pre and post scripts will be
     # run and then the upgrade.
