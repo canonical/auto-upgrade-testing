@@ -86,6 +86,8 @@ class TouchBackend(ProviderBackend):
         flash_cmd = self._get_flash_command()
         run_command_with_logged_output(flash_cmd)
 
+        self._provision_networking()
+
         logger.info('Flashing completed..')
 
     def _put_device_in_bootloader(self):
@@ -112,6 +114,13 @@ class TouchBackend(ProviderBackend):
         if self.recovery_file is not None:
             cmd.extend(['--recovery-image', self.recovery_file])
         return cmd
+
+    def _provision_networking(self):
+        cmd = ['phablet-network']
+        if self.serial is not None:
+            cmd.extend('-s', self.serial)
+        # TODO: Possibly need to handle network files passed in?
+        run_command_with_logged_output(cmd)
 
     def get_adt_run_args(self, **kwargs):
         try:
@@ -203,7 +212,7 @@ def _get_current_device_details(serial=None):
     try:
         output = subprocess.check_output(detail_cmd, universal_newlines=True)
         return {
-            detail[0].replace(' ', '_'): detail[1] for detail in
+            detail[0].replace(' ', '_'): detail[1].lstrip(' ') for detail in
             [line.split(':') for line in output.split('\n') if line != '']
         }
     except subprocess.CalledProcessError as e:

@@ -53,9 +53,7 @@ function main() {
 
         pre_tests
 
-        do_upgrade
-
-        maybe_reboot
+        do_upgrade_and_maybe_reboot
     else
         upgrade_log "Skipping pre-tests as we have rebooted."
     fi
@@ -160,7 +158,7 @@ function do_setup() {
     echo "---" >> "${TEST_RESULT_FILE}"
 }
 
-function do_upgrade() {
+function do_upgrade_and_maybe_reboot() {
     current="${INITIAL_SYSTEM_STATE}"
     target="${POST_SYSTEM_STATE}"
     upgrade_log "Attempting to upgrade from ${current} to ${target}"
@@ -169,6 +167,7 @@ function do_upgrade() {
         do_touch_device_upgrade
     else
         do_normal_upgrade
+        maybe_reboot
     fi
 
     if [ $STATUS -ne 0 ]; then
@@ -185,9 +184,27 @@ function do_touch_device_upgrade() {
     local revision=`expr "${POST_SYSTEM_STATE}" : '^.*:\([0-9]*\)$'`
     upgrade_log "Upgrading to: channel: ${channel} revno: ${revision}"
 
-    upgrade_log "Running command: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
-    sudo -A system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
+    # Do both so we have some history of the logs (anything after reboot_prepare will be lost.)
+    upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
+    # sudo -A system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
+    upgrade_log "Now actually doing install now which will reboot the device."
+    reboot_prepare
+    # sudo -A system-image-cli -v --channel "${channel}" --build "${revision}"
+    sleep 30
+    reboot
+
     STATUS=$?
+}
+
+function reboot_prepare() {
+    prepare_function="/tmp/autopkgtest-reboot-prepare"
+    if [ -f ${prepare_function} ]; then
+        upgrade_log "Preparing the system for reboot."
+        $($prepare_function 'upgradetests')
+    else
+        upgrade_log "This testbed does not support rebooting."
+        exit 1
+    fi
 }
 
 function do_normal_upgrade() {
