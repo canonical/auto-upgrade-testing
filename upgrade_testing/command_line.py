@@ -136,7 +136,7 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
     # and doesn't need to worry about cleanup.
     with test_source_retriever(testsuite.test_source) as test_source_dir:
         adt_run_command = get_adt_run_command(
-            testsuite.provisioning.backend,
+            testsuite.provisioning,
             testrun_files,
             test_source_dir,
             output_dir,
@@ -144,13 +144,17 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
         subprocess.check_call(adt_run_command)
 
 
-def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
+def get_adt_run_command(
+        provisioning, testrun_files, test_source_dir, results_dir):
     """Construct the adt command to run.
 
-    :param backend:
-    :param testrun_files: is the named tuple that contains testrun_tmp_dir
-    :param test_source_dir:
-    :param results_dir:
+    :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
+      object to retrieve adt details from.
+    :param testrun_files: upgrade_testing._hostprep.TestrunTempFiles object
+      providing temp/setup directory details
+    :param test_source_dir: Source directory where the run scripts are located.
+    :param results_dir: The directory path in which to place any artifacts and
+      results from the run.
 
     """
     # Default adt-run hardcoded adt command
@@ -181,7 +185,7 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
         )
     )
 
-    backend_args = backend.get_adt_run_args(
+    backend_args = provisioning.get_adt_run_args(
         tmp_dir=testrun_files.testrun_tmp_dir
     )
 

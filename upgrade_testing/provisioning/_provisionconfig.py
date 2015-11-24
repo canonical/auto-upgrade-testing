@@ -128,7 +128,7 @@ class LXCProvisionSpecification(ProvisionSpecification):
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args(kwargs)
+        return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
@@ -190,7 +190,7 @@ class TouchProvisionSpecification(ProvisionSpecification):
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args(kwargs)
+        return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, channel={channel}, revisions={revisions})'.format(  # NOQA
@@ -242,7 +242,7 @@ class QemuProvisionSpecification(ProvisionSpecification):
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args(kwargs)
+        return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
