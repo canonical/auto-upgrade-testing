@@ -1,27 +1,27 @@
 ---
 - testname: "Precise->Trusty basic upgrade"
   conf_version: 1.0
-  #provisioning:
-  #  backend: lxc
-  #  arch: amd64
-  #  distribution: ubuntu
-  #  # First release is the initial and what will be provisioned.
-  #  # For each release in the list after that the pre and post scripts will be
-  #  # run and then the upgrade.
-  #  releases:
-  #    - "precise"
-  #    - "trusty"
-
   provisioning:
-    backend: device
-    channel: ubuntu-touch/rc-proposed/bq-aquaris.en
-    password: "0000"
+    backend: lxc
+    arch: amd64
+    distribution: ubuntu
     # First release is the initial and what will be provisioned.
     # For each release in the list after that the pre and post scripts will be
     # run and then the upgrade.
-    revisions:
-      - "157"
-      - "158"
+    releases:
+      - "precise"
+      - "trusty"
+
+  #provisioning:
+  #  backend: device
+  #  channel: ubuntu-touch/rc-proposed/bq-aquaris.en
+  #  password: "0000"
+  #  # First release is the initial and what will be provisioned.
+  #  # For each release in the list after that the pre and post scripts will be
+  #  # run and then the upgrade.
+  #  revisions:
+  #    - "157"
+  #    - "158"
 
   #Script location can be a local path
   script_location: file://./tests

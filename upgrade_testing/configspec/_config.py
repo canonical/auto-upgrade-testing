@@ -17,11 +17,17 @@
 #
 
 import logging
+import os
 import yaml
+
+from collections import namedtuple
 
 from upgrade_testing.provisioning import ProvisionSpecification
 
 logger = logging.getLogger(__name__)
+
+
+ScriptStore = namedtuple('ScriptStore', ['executables', 'location'])
 
 
 class TestSpecification:
@@ -43,9 +49,21 @@ class TestSpecification:
 
     def _reader(self, details):
         self.name = details['testname']
-        self.pre_upgrade_scripts = details['pre_upgrade_scripts']
-        self.post_upgrade_tests = details['post_upgrade_tests']
-        self._test_source_dir = details['script_location']
+
+        script_location = details.get('script_location', None)
+
+        self.pre_upgrade_scripts = ScriptStore(
+            *_generate_script_list(
+                details['pre_upgrade_scripts'],
+                script_location
+            )
+        )
+        self.post_upgrade_tests = ScriptStore(
+            *_generate_script_list(
+                details['post_upgrade_tests'],
+                script_location
+            )
+        )
 
     @property
     def test_source(self):
@@ -60,6 +78,38 @@ class TestSpecification:
             name=self.name,
             prov=self.provisioning
         )
+
+
+def _generate_script_list(scripts_or_path, script_location=None):
+    """Return a tuple containing a list of script names and a location string.
+
+    Source can either be a path that contains executable files or a list of
+    names of an executable
+
+    """
+
+    if isinstance(scripts_or_path, list):
+        # Can we default script_location to './'?
+        if script_location is None:
+            raise ValueError('No script location supplied for scripts')
+        # Already list of scripts, return it.
+        return (scripts_or_path, script_location)
+    elif os.path.isdir(scripts_or_path):
+        abs_path = os.path.abspath(scripts_or_path)
+        return (_get_executable_files(abs_path), abs_path)
+
+    raise ValueError(
+        'No scripts found. {} is neither a path or list of scripts'
+    )
+
+
+def _get_executable_files(abs_path):
+    def is_executable(path):
+        return os.access(path, os.X_OK)
+    return [
+        f for f in os.listdir(abs_path)
+        if is_executable(os.join(abs_path, f))
+    ]
 
 
 def definition_reader(testdef_filepath, provisiondef_filepath=None):

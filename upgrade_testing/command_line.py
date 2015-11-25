@@ -17,10 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.configspec import (
-    definition_reader,
-    test_source_retriever,
-)
+from upgrade_testing.configspec import definition_reader
 from upgrade_testing.preparation import (
     get_testbed_storage_location,
     prepare_test_environment,
@@ -134,14 +131,13 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
     """
     # we can change 'test_source_retriever' so that it uses the testurn_files
     # and doesn't need to worry about cleanup.
-    with test_source_retriever(testsuite.test_source) as test_source_dir:
-        adt_run_command = get_adt_run_command(
-            testsuite.provisioning.backend,
-            testrun_files,
-            test_source_dir,
-            output_dir,
-        )
-        subprocess.check_call(adt_run_command)
+
+    adt_run_command = get_adt_run_command(
+        testsuite.provisioning.backend,
+        testrun_files,
+        output_dir,
+    )
+    subprocess.check_call(adt_run_command)
 
 
 def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
@@ -160,12 +156,21 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
     ]
 
     # Copy across the test scripts.
-    dest_dir = '{testbed_location}/run_scripts/'.format(
+    pre_dest_dir = '{testbed_location}/pre_scripts/'.format(
         testbed_location=get_testbed_storage_location()
     )
     copy_cmd = '--copy={src}:{dest}'.format(
-        src=test_source_dir,
-        dest=dest_dir
+        src=testrun_files.pre_scripts,
+        dest=pre_dest_dir
+    )
+    adt_cmd.append(copy_cmd)
+
+    post_dest_dir = '{testbed_location}/post_scripts/'.format(
+        testbed_location=get_testbed_storage_location()
+    )
+    copy_cmd = '--copy={src}:{dest}'.format(
+        src=testrun_files.post_scripts,
+        dest=post_dest_dir
     )
     adt_cmd.append(copy_cmd)
 

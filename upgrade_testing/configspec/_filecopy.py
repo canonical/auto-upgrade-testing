@@ -19,23 +19,22 @@
 
 import logging
 import os
+import shutil
 import subprocess
-
-from contextlib import contextmanager
-from shutil import rmtree
-from tempfile import mkdtemp
 
 logger = logging.getLogger(__name__)
 
 
-@contextmanager
-def test_source_retriever(source_location):
+def test_source_retriever(source_location, dest_dir):
     """Given a location path for the tests location retrieve a local copy.
 
     This allows us to copy across what we need to the testbed.
 
     :param location: string for location to retrieve the test directory
       from.
+    :param dest_dir: where to move the files too. This could be a temp
+      directory that gets cleaned up after a run, but that's not the
+      responsibility of this method
     Currently support uri types:
       - 'file://' for local file locations
       - 'lp:' for launchpad bzr branch locations.
@@ -43,29 +42,25 @@ def test_source_retriever(source_location):
     :returns: string containing directory path to copy across
 
     """
-    needs_cleanup = False
-
-    try:
-        if source_location.startswith('file://'):
-            local_location = _local_file_retrieval(source_location)
-        elif source_location.startswith('lp:'):
-            local_location = _bzr_file_retrieval(source_location)
-            needs_cleanup = True
-        else:
-            raise ValueError('Unknown file protocol')
-        yield local_location
-    finally:
-        if needs_cleanup:
-            _cleanup_dir(local_location)
+    if source_location.startswith('file://'):
+        return _local_file_retrieval(source_location, dest_dir)
+    elif source_location.startswith('lp:'):
+        return _bzr_file_retrieval(source_location, dest_dir)
+    else:
+        raise ValueError('Unknown file protocol')
 
 
-def _local_file_retrieval(source):
-    return os.path.abspath(source.replace('file://', ''))
+def _local_file_retrieval(source, dest_dir):
+    source_path = os.path.abspath(source.replace('file://', ''))
+    for filename in os.listdir(source_path):
+        full_filename = os.path.join(source_path, filename)
+        if os.path.isfile(full_filename):
+            shutil.copy(full_filename, dest_dir)
+    return dest_dir
 
 
-def _bzr_file_retrieval(source):
-    tmp_dir = mkdtemp()
-    bzr_cmd = ['bzr', 'export', tmp_dir, source]
+def _bzr_file_retrieval(source, dest_dir):
+    bzr_cmd = ['bzr', 'export', dest_dir, source]
     try:
         subprocess.check_output(bzr_cmd)
     except subprocess.CalledProcessError:
@@ -74,8 +69,4 @@ def _bzr_file_retrieval(source):
             'Unable to export from provided source: {}'.format(source)
         )
 
-    return tmp_dir
-
-
-def _cleanup_dir(path):
-    rmtree(path)
+    return dest_dir
