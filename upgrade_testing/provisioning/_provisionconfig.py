@@ -16,7 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 from upgrade_testing.provisioning import backends
+
+logger = logging.getLogger(__name__)
 
 
 class ProvisionSpecification:
@@ -51,7 +55,7 @@ class ProvisionSpecification:
         """Provision the stored backend."""
         raise NotImplementedError()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         raise NotImplementedError()
 
@@ -73,10 +77,14 @@ class ProvisionSpecification:
 def get_specification_type(spec_name):
     __spec_map = dict(
         lxc=LXCProvisionSpecification,
-        device=DeviceProvisionSpecification,
+        touch=TouchProvisionSpecification,
         qemu=QemuProvisionSpecification,
     )
-    return __spec_map[spec_name]
+    try:
+        return __spec_map[spec_name]
+    except KeyError:
+        logger.error('Unknown spec name: {}'.format(spec_name))
+        raise
 
 
 class LXCProvisionSpecification(ProvisionSpecification):
@@ -118,9 +126,9 @@ class LXCProvisionSpecification(ProvisionSpecification):
         """Provision the stored backend."""
         return self.backend.create()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args()
+        return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
@@ -131,7 +139,7 @@ class LXCProvisionSpecification(ProvisionSpecification):
         )
 
 
-class DeviceProvisionSpecification(ProvisionSpecification):
+class TouchProvisionSpecification(ProvisionSpecification):
     def __init__(self, provision_config):
         try:
             self.channel = provision_config['channel']
@@ -141,15 +149,14 @@ class DeviceProvisionSpecification(ProvisionSpecification):
             raise ValueError('Missing config detail: {}'.format(str(e)))
 
         serial = provision_config.get('serial', None)
-        self.backend = backends.DeviceBackend(
-            self.channel,
+        self.backend = backends.TouchBackend(
             self.initial_state,
             password,
             serial,
         )
 
     def _construct_state_string(self, rev):
-        return backends.DeviceBackend.format_device_state_string(
+        return backends.TouchBackend.format_device_state_string(
             self.channel,
             rev
         )
@@ -181,9 +188,9 @@ class DeviceProvisionSpecification(ProvisionSpecification):
         """Provision the stored backend."""
         return self.backend.create()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args()
+        return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, channel={channel}, revisions={revisions})'.format(  # NOQA
@@ -229,13 +236,13 @@ class QemuProvisionSpecification(ProvisionSpecification):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def backend_create(self):
+    def create(self):
         """Provision the stored backend."""
         return self.backend.create()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args()
+        return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
         return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA

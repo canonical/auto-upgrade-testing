@@ -20,8 +20,8 @@
   #  # For each release in the list after that the pre and post scripts will be
   #  # run and then the upgrade.
   #  revisions:
-  #    - "157"
-  #    - "158"
+  #    - "177"
+  #    - "178"
 
   #Script location can be a local path
   script_location: file://./tests

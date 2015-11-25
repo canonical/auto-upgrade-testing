@@ -20,7 +20,6 @@ import logging
 import os
 import shutil
 import tempfile
-import pkg_resources
 
 from collections import namedtuple
 from contextlib import contextmanager
@@ -28,6 +27,7 @@ from textwrap import dedent
 
 from upgrade_testing.configspec import test_source_retriever
 from upgrade_testing.preparation._testbed import get_testbed_storage_location
+from upgrade_testing.configspec import get_file_data_location
 
 logger = logging.getLogger(__name__)
 
@@ -143,10 +143,7 @@ def _create_autopkg_details(temp_dir):
     test_dir_tree = os.path.join(dir_tree, 'tests')
     os.makedirs(test_dir_tree)
 
-    import upgrade_testing
-    source_dir = pkg_resources.resource_filename(
-        upgrade_testing.__name__, 'data'
-    )
+    source_dir = get_file_data_location()
 
     def _copy_file(dest, name):
         """Copy a file from the source data dir to dest."""

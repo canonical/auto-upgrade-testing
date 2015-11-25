@@ -72,7 +72,7 @@ class QemuBackend(ProviderBackend):
         os.rename(initial_image_path, final_image_path)
         logger.info('Image created.')
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         return ['qemu', os.path.join(CACHE_DIR, self.image_name)]
 
     def __repr__(self):

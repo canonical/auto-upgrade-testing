@@ -39,7 +39,7 @@ class ProviderBackend:
         """
         raise NotImplementedError()
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         """Return a list containing required args to pass to adt-run."""
         raise NotImplementedError()
 
