@@ -78,6 +78,8 @@ def prepare_test_environment(testsuite):
             # Should we create a dir so that it won't interfer?
             unbuilt_dir=temp_dir,
             testrun_tmp_dir=temp_dir,
+            pre_scripts=pre_path,
+            post_scripts=post_path,
         )
     finally:
         _cleanup_dir(temp_dir)

@@ -12,7 +12,8 @@ TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 # Only copy on the first run through
 if [ ! -d "${BASE_LOCATION}" ]; then
    mkdir "${BASE_LOCATION}"
-   mv "${TMP_LOCATION}/run_scripts" "${BASE_LOCATION}"
+   mv "${TMP_LOCATION}/pre_scripts" "${BASE_LOCATION}"
+   mv "${TMP_LOCATION}/post_scripts" "${BASE_LOCATION}"
    mv "${TMP_LOCATION}/auto_upgrade_test_settings" "${BASE_LOCATION}"
 fi
 

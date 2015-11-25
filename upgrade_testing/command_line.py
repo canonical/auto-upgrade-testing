@@ -141,14 +141,13 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
 
 
 def get_adt_run_command(
-        provisioning, testrun_files, test_source_dir, results_dir):
+        provisioning, testrun_files, results_dir):
     """Construct the adt command to run.
 
     :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
       object to retrieve adt details from.
     :param testrun_files: upgrade_testing._hostprep.TestrunTempFiles object
       providing temp/setup directory details
-    :param test_source_dir: Source directory where the run scripts are located.
     :param results_dir: The directory path in which to place any artifacts and
       results from the run.
 
