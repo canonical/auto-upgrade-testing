@@ -1,23 +1,49 @@
 #!/bin/bash
 
-SCRIPT_LOCATION='/root/run_scripts'
+TMP_LOCATION="/tmp/ubuntu-upgrade-testing"
+BASE_LOCATION="${ADT_ARTIFACTS}/upgrade_run_config"
+SCRIPT_LOCATION="${BASE_LOCATION}/run_scripts"
 # Currently experimenting with using yaml output for run results (test
 # pass/fail etc.) for now, then we'll use something better
 TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 
+# Only copy on the first run through
+if [ ! -f "${BASE_LOCATION}" ]; then
+   mkdir "${BASE_LOCATION}"
+   mv "${TMP_LOCATION}/run_scripts" "${BASE_LOCATION}"
+   mv "${TMP_LOCATION}/auto_upgrade_test_settings" "${BASE_LOCATION}"
+fi
+
 # This is put in a known place by the wrapper script and contains the details
-# of above (as they will change each run.
-source /root/auto_upgrade_test_settings
+# of above (as they will change each run).
+CONFIG_FILE="${BASE_LOCATION}/auto_upgrade_test_settings"
+source "${CONFIG_FILE}"
 export TEST_RESULTS_DIR
 
 HAVE_REBOOTED=$ADT_REBOOT_MARK
 
 STATUS=0
 
+function upgrade_log() {
+    local output=$1
+    echo -e "auto-upgrade [$(date +%R:%S)]: ${output}"
+}
+
+function cleanup() {
+    cp "${CONFIG_FILE}" "${TEST_RESULTS_DIR}"
+    upgrade_log "Cleaning up configuration files."
+    rm -r "${BASE_LOCATION}"
+}
+
 function main() {
+    # Ensure we don't have any mix-ups with multiple runs on the same testbed.
+    trap cleanup EXIT
+
+    upgrade_log "Running on ${RUNNING_BACKEND}"
+
     if [ -z "${HAVE_REBOOTED}" ]; then
-        echo -e "Beginning from the start."
+        upgrade_log "Beginning from the start."
         # Haven't rebooted, starting from the beginning.
         output_running_system
 
@@ -31,12 +57,12 @@ function main() {
 
         maybe_reboot
     else
-        echo -e "Skipping pre-tests as we have rebooted."
+        upgrade_log "Skipping pre-tests as we have rebooted."
     fi
 
     # If we have rebooted we pick up from here.
     output_running_system
-    exit_if_not_running_post_system
+    exit_if_not_running_expected_post_system
 
     post_tests
 
@@ -48,29 +74,32 @@ function main() {
 function exit_if_not_running_initial_system() {
     # This needs to branch if this is a lxc or device run.
     local running_system=$(_get_running_system_name)
-    echo "Checking that running system (${running_system}) is ${INITIAL_SYSTEM_STATE}"
+    upgrade_log "Checking that running system (${running_system}) is ${INITIAL_SYSTEM_STATE}"
     if [ "${INITIAL_SYSTEM_STATE}" != "${running_system}" ]; then
-        echo "ERROR: Expected ${INITIAL_SYSTEM_STATE} got ${running_system}"
+        upgrade_log "ERROR: Expected ${INITIAL_SYSTEM_STATE} got ${running_system}"
         # Is there a better way than just exiting here?
         exit 1
     fi
 }
 
 # Can we de-dupe these methods too?
-function exit_if_not_running_post_system() {
+function exit_if_not_running_expected_post_system() {
     # This needs to branch if this is a lxc or device run.
     local running_system=$(_get_running_system_name)
-    echo "Checking that running system (${running_system}) is ${POST_SYSTEM_STATE}"
+    upgrade_log "Checking that running system (${running_system}) is ${POST_SYSTEM_STATE}"
     if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
-        echo "ERROR: Expected ${POST_SYSTEM_STATE} got ${running_system}"
+        upgrade_log "ERROR: Expected ${POST_SYSTEM_STATE} got ${running_system}"
         # Is there a better way than just exiting here?
         exit 1
     fi
 }
 
 function _get_running_system_name() {
-    local release=$(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
-    echo "${release}"
+    if running_on_device; then
+        echo "ubuntu-touch/rc-proposed/bq-aquaris.en:157"
+    else
+        echo $(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
+    fi
 }
 
 function pre_tests() {
@@ -86,7 +115,7 @@ function pre_tests() {
         export TESTRUN_RESULTS_DIR=$this_script_results
 
         local FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
-        echo -e "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
+        upgrade_log "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
         ${FULL_TEST_SCRIPT_PATH}
 
         local test_result=$?
@@ -110,7 +139,7 @@ function post_tests() {
         export TESTRUN_RESULTS_DIR=$this_script_results
 
         local FULL_TEST_SCRIPT_PATH="${SCRIPT_LOCATION}/${test}"
-        echo -e "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
+        upgrade_log "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
 
         ${FULL_TEST_SCRIPT_PATH}
 
@@ -124,18 +153,44 @@ function post_tests() {
 }
 
 function do_setup() {
-    echo -e "Performing run setup."
-    # Make sure the file is available and proper yaml.
+    upgrade_log "Performing run setup."
+    # Make sure the output results file is available and proper yaml.
     mkdir "${TEST_RESULTS_DIR}"
     echo "---" >> "${TEST_RESULT_FILE}"
 }
 
 function do_upgrade() {
-    current='P'
-    target='T'
-    echo -e "Attempting to upgrade from ${current} to ${target}"
-    # Do something different if this is a device etc.
+    current="${INITIAL_SYSTEM_STATE}"
+    target="${POST_SYSTEM_STATE}"
+    upgrade_log "Attempting to upgrade from ${current} to ${target}"
 
+    if running_on_device; then
+        do_device_upgrade
+    else
+        do_normal_upgrade
+    fi
+
+    if [ $STATUS -ne 0 ]; then
+        upgrade_log "Something went wrong with the upgrade."
+        exit 1
+    fi
+
+    upgrade_log "Upgrading complete."
+}
+
+function do_device_upgrade() {
+    upgrade_log "Starting device upgrade."
+    local channel=`expr "${POST_SYSTEM_STATE}" : '\(^.*\):'`
+    local revision=`expr "${POST_SYSTEM_STATE}" : '^.*:\([0-9]*\)$'`
+    upgrade_log "Upgrading to: channel: ${channel} revno: ${revision}"
+
+    upgrade_log "Running command: system-image-cli --dry-run -v --no-reboot --channel ${channel} --build ${revision}"
+    sudo -A system-image-cli --dry-run -v --no-reboot --channel "${channel}" --build "${revision}"
+    STATUS=$?
+}
+
+function do_normal_upgrade() {
+    upgrade_log "Starting machine upgrade."
     # copy the profile
     mkdir -p /etc/update-manager/release-upgrades.d
     # copy from outside self.profile /etc/update-manager/release-upgrades.d
@@ -153,7 +208,7 @@ function do_upgrade() {
 
     # if we have an upgradefilesidr, use it
     if (false) ; then # derp
-        echo "using the upgradefilesdir!" # herp
+        upgrade_log "using the upgradefilesdir!" # herp
     else
         export DEBIAN_FRONTEND=noninteractive
 	    # Make sure we have do-release-upgrade
@@ -163,29 +218,46 @@ function do_upgrade() {
         #    do-release-upgrade -d -f noninteractive
         STATUS=$?
     fi
-    echo -e "Upgrading complete."
 }
 
 function maybe_reboot() {
     # Check if we actually want to reboot . . .
     reboot_function="/tmp/autopkgtest-reboot"
     if [ -f ${reboot_function} ]; then
-        echo -e "Rebooting the system."
+        upgrade_log "Rebooting the system."
         $($reboot_function 'upgradetests')
     else
-        echo -e "This testbed does not support rebooting."
+        upgrade_log "This testbed does not support rebooting."
+        exit 1
     fi
 }
 
 function collect_results() {
     # Move any files of interest into $TEST_RESULT_DIR
-    echo -e "Collecting results"
+    upgrade_log "Collecting results"
     # get /var/log/dist-upgrade/*
     # get /var/log/dpkg.log
 }
 
+
+function running_on_device() {
+    TRUE=0
+    FALSE=1
+    # RUNNING_BACKEND is supplied by the configuration file.
+    if [ "${RUNNING_BACKEND}" = "device" ]; then
+        return $TRUE
+    else
+        return $FALSE
+    fi
+}
+
 function output_running_system() {
-    echo -e "Currently running: $(lsb_release -a)"
+    if running_on_device; then
+        # Return a string like: {channel}:{rev}
+        echo "ubuntu-touch/rc-proposed/bq-aquaris.en:157"
+    else
+        echo "Currently running: $(lsb_release -a)"
+    fi
 }
 
 main "$@"
