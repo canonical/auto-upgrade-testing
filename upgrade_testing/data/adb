@@ -290,7 +290,7 @@ cleanup() {
 
 # argument parsing
 SHORTOPTS="l:,p:,s:,w,r,b"
-LONGOPTS="login:,password:,serial:,rw,apt-update,reset,reboot,no-reset,fwd-port:,keep-screen-active,identity:"
+LONGOPTS="login:,password:,serial:,rw,apt-update,reset,reboot,no-reset,fwd-port:,keep-screen-active,ssh-dir:"
 
 TEMP=$(getopt -o $SHORTOPTS --long $LONGOPTS -- "$@")
 eval set -- "$TEMP"
