@@ -95,8 +95,13 @@ def _generate_script_list(scripts_or_path, script_location=None):
         # Already list of scripts, return it.
         return (scripts_or_path, script_location)
     elif os.path.isdir(scripts_or_path):
+        if script_location is not None:
+            logger.warning(
+                'script_location ignored as scripts provided is a path'
+            )
         abs_path = os.path.abspath(scripts_or_path)
-        return (_get_executable_files(abs_path), abs_path)
+        protocol_path = 'file://{}'.format(abs_path)
+        return (_get_executable_files(abs_path), protocol_path)
 
     raise ValueError(
         'No scripts found. {} is neither a path or list of scripts'
@@ -105,10 +110,10 @@ def _generate_script_list(scripts_or_path, script_location=None):
 
 def _get_executable_files(abs_path):
     def is_executable(path):
-        return os.access(path, os.X_OK)
+        return os.path.isfile(path) and os.access(path, os.X_OK)
     return [
         f for f in os.listdir(abs_path)
-        if is_executable(os.join(abs_path, f))
+        if is_executable(os.path.join(abs_path, f))
     ]
 
 
