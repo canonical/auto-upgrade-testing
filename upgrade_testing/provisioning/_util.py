@@ -29,4 +29,6 @@ def run_command_with_logged_output(command):
             bufsize=1, universal_newlines=True
     ) as p:
         for line in p.stdout:
-            logger.info(line.strip('\n'))
+            logger.info('stdout: {}'.format(line.strip('\n')))
+        for line in p.stderr:
+            logger.info('stderr: {}'.format(line.strip('\n')))
