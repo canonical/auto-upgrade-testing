@@ -86,6 +86,13 @@ class TouchBackend(ProviderBackend):
         flash_cmd = self._get_flash_command()
         run_command_with_logged_output(flash_cmd)
 
+        if not self._device_in_required_state():
+            err_msg = 'Failed to flash the device into the required state.'
+            if self.recovery_file is None:
+                err_msg += ' (Note: No recovery file was specified.)'
+            logger.error(err_msg)
+            raise RuntimeError(err_msg)
+
         self._provision_networking()
 
         logger.info('Flashing completed..')
@@ -219,6 +226,7 @@ def _get_current_device_details(serial=None):
         }
     except subprocess.CalledProcessError as e:
         logger.error('Failed to collect device details: '.format(str(e)))
+        raise RuntimeError('No Touch devices found.')
 
 
 def _get_device_current_state(serial=None):
