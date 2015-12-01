@@ -7,6 +7,7 @@ SCRIPT_LOCATION="${BASE_LOCATION}/run_scripts"
 # pass/fail etc.) for now, then we'll use something better
 TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
+CANARY_NAME="/tmp/upgrade_script_reboot_canary"
 
 # Only copy on the first run through
 if [ ! -d "${BASE_LOCATION}" ]; then
@@ -44,6 +45,8 @@ function main() {
 
     if [ -z "${HAVE_REBOOTED}" ]; then
         upgrade_log "Beginning from the start."
+        create_reboot_canary
+
         # Haven't rebooted, starting from the beginning.
         output_running_system
 
@@ -60,6 +63,7 @@ function main() {
 
     # If we have rebooted we pick up from here.
     output_running_system
+    exit_if_reboot_canary_exists
     exit_if_not_running_expected_post_system
 
     post_tests
@@ -86,6 +90,17 @@ function exit_if_not_running_expected_post_system() {
     if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
         upgrade_log "ERROR: Expected ${POST_SYSTEM_STATE} got ${running_system}"
         # Is there a better way than just exiting here?
+        exit 1
+    fi
+}
+
+function create_reboot_canary() {
+    touch "${CANARY_NAME}"
+}
+
+function exit_if_reboot_canary_exists() {
+    if [ -f "${CANARY_NAME}" ]; then
+        upgrade_log "ERROR: system has not rebooted"
         exit 1
     fi
 }
