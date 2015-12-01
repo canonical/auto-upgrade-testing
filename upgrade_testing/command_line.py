@@ -208,6 +208,7 @@ def _grab_git_version_autopkgtest(tmp_dir):
     # Grab the git version of autopkgtest so that we can use the latest
     # features (i.e. reboot-prepare).
     # This is needed as 3.14+ is not in vivid.
+    # TODO: Remove this need by grabbing it from backports or universe.
     git_url = 'git://git.debian.org/git/autopkgtest/autopkgtest.git'
     git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
     git_command = ['git', 'clone', git_url, git_trunk_path]
@@ -226,7 +227,7 @@ def main():
         logger.error(
             'Unable to parse configuration file: {}'.format(args.config)
         )
-        exit(1)
+        sys.exit(1)
 
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)

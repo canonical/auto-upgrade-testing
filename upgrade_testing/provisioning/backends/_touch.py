@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class TouchBackend(ProviderBackend):
 
-    def __init__(self, initial_state, password, serial=None):
+    def __init__(self, initial_state, password, serial=None, recovery=None):
         """Provide Touch device capabilities as defined in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
@@ -41,7 +41,7 @@ class TouchBackend(ProviderBackend):
         self.password = password
 
         # TODO: Might require recovery file
-        self.recovery_file = None
+        self.recovery_file = recovery
 
     def available(self):
         """Return true if a device is connected and it's in the desired state.
@@ -86,6 +86,13 @@ class TouchBackend(ProviderBackend):
         flash_cmd = self._get_flash_command()
         run_command_with_logged_output(flash_cmd)
 
+        if not self._device_in_required_state():
+            err_msg = 'Failed to flash the device into the required state.'
+            if self.recovery_file is None:
+                err_msg += ' (Note: No recovery file was specified.)'
+            logger.error(err_msg)
+            raise RuntimeError(err_msg)
+
         self._provision_networking()
 
         logger.info('Flashing completed..')
@@ -102,6 +109,7 @@ class TouchBackend(ProviderBackend):
     def _get_flash_command(self):
         cmd = [
             'ubuntu-device-flash',
+            '-v',
             '--revision', self.revision,
             'touch',
             '--bootstrap',
@@ -124,7 +132,7 @@ class TouchBackend(ProviderBackend):
 
     def get_adt_run_args(self, **kwargs):
         try:
-            tmp_dir = os.path.join(kwargs['tmp_dir'], 'identity')
+            tmp_dir = os.path.join(kwargs['tmp_dir'], 'ssh-dir')
             os.makedirs(tmp_dir)
         except KeyError:
             logger.error('Require tmp_dir is required for Touch backend.')
@@ -134,8 +142,9 @@ class TouchBackend(ProviderBackend):
         logger.info('Using adb: {}'.format(adb_script))
         cmd = [
             'ssh', '-s', adb_script,
+            '--reboot',
             '--', '-p', self.password,
-            '--identity', tmp_dir
+            '--ssh-dir', tmp_dir
         ]
         if self.serial is not None:
             cmd = cmd + ['-s', self.serial]
@@ -217,6 +226,7 @@ def _get_current_device_details(serial=None):
         }
     except subprocess.CalledProcessError as e:
         logger.error('Failed to collect device details: '.format(str(e)))
+        raise RuntimeError('No Touch devices found.')
 
 
 def _get_device_current_state(serial=None):
