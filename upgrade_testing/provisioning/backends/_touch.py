@@ -102,6 +102,7 @@ class TouchBackend(ProviderBackend):
     def _get_flash_command(self):
         cmd = [
             'ubuntu-device-flash',
+            '-v',
             '--revision', self.revision,
             'touch',
             '--bootstrap',
@@ -124,7 +125,7 @@ class TouchBackend(ProviderBackend):
 
     def get_adt_run_args(self, **kwargs):
         try:
-            tmp_dir = os.path.join(kwargs['tmp_dir'], 'identity')
+            tmp_dir = os.path.join(kwargs['tmp_dir'], 'ssh-dir')
             os.makedirs(tmp_dir)
         except KeyError:
             logger.error('Require tmp_dir is required for Touch backend.')
@@ -134,8 +135,9 @@ class TouchBackend(ProviderBackend):
         logger.info('Using adb: {}'.format(adb_script))
         cmd = [
             'ssh', '-s', adb_script,
+            '--reboot',
             '--', '-p', self.password,
-            '--identity', tmp_dir
+            '--ssh-dir', tmp_dir
         ]
         if self.serial is not None:
             cmd = cmd + ['-s', self.serial]
