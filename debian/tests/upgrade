@@ -184,15 +184,15 @@ function do_touch_device_upgrade() {
     local revision=`expr "${POST_SYSTEM_STATE}" : '^.*:\([0-9]*\)$'`
     upgrade_log "Upgrading to: channel: ${channel} revno: ${revision}"
 
-    # Do both so we have some history of the logs (anything after reboot_prepare will be lost.)
+    # Do both so we have some history of the logs as well as save time after
+    # the reboot prepare (which will just start the run again after a while.
+    # TODO: Determine if possible to change this behaviour.
     upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
-    # sudo -A system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
+    system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
     upgrade_log "Now actually doing install now which will reboot the device."
+    # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
     reboot_prepare
-    # sudo -A system-image-cli -v --channel "${channel}" --build "${revision}"
-    sleep 30
-    reboot
-
+    system-image-cli -v --channel "${channel}" --build "${revision}" &>> /home/phablet/veebers-reboot.log
     STATUS=$?
 }
 
@@ -201,6 +201,7 @@ function reboot_prepare() {
     if [ -f ${prepare_function} ]; then
         upgrade_log "Preparing the system for reboot."
         $($prepare_function 'upgradetests')
+        sleep 30
     else
         upgrade_log "This testbed does not support rebooting."
         exit 1
