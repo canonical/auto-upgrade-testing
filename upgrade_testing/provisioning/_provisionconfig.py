@@ -149,10 +149,12 @@ class TouchProvisionSpecification(ProvisionSpecification):
             raise ValueError('Missing config detail: {}'.format(str(e)))
 
         serial = provision_config.get('serial', None)
+        recovery_file = provision_config.get('recovery_file', None)
         self.backend = backends.TouchBackend(
             self.initial_state,
             password,
             serial,
+            recovery_file,
         )
 
     def _construct_state_string(self, rev):

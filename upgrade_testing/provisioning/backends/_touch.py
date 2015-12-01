@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class TouchBackend(ProviderBackend):
 
-    def __init__(self, initial_state, password, serial=None):
+    def __init__(self, initial_state, password, serial=None, recovery=None):
         """Provide Touch device capabilities as defined in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
@@ -41,7 +41,7 @@ class TouchBackend(ProviderBackend):
         self.password = password
 
         # TODO: Might require recovery file
-        self.recovery_file = None
+        self.recovery_file = recovery
 
     def available(self):
         """Return true if a device is connected and it's in the desired state.
