@@ -203,7 +203,7 @@ class QemuProvisionSpecification(ProvisionSpecification):
                                                        self.arch))
         self.build_args = provision_config.get('build_args', [])
 
-        self.backend = backends. QemuBackend(
+        self.backend = backends.QemuBackend(
             self.initial_state,
             self.arch,
             self.image_name,

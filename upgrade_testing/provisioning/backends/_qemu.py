@@ -76,6 +76,10 @@ class QemuBackend(ProviderBackend):
     def get_adt_run_args(self):
         return ['qemu', os.path.join(CACHE_DIR, self.image_name)]
 
+    @property
+    def name(self):
+        return 'qemu' 
+
     def __repr__(self):
         return '{classname}(release={release})'.format(
             classname=self.__class__.__name__,
