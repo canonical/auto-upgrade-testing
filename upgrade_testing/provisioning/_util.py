@@ -27,11 +27,9 @@ def run_command_with_logged_output(command):
     with subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             bufsize=1,
             universal_newlines=True
     ) as proc:
         for line in proc.stdout:
-            logger.info('stdout: {}'.format(line.strip('\n')))
-        for line in proc.stderr:
-            logger.info('stderr: {}'.format(line.strip('\n')))
+            logger.info(line.strip('\n'))

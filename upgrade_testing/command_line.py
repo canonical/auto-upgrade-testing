@@ -214,6 +214,7 @@ def _grab_git_version_autopkgtest(tmp_dir):
 
     return git_trunk_path
 
+
 def main():
     setup_logging()
     args = parse_args()

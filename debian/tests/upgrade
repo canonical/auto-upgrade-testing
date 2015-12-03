@@ -200,7 +200,7 @@ function do_touch_device_upgrade() {
     upgrade_log "Upgrading to: channel: ${channel} revno: ${revision}"
 
     # Do both so we have some history of the logs as well as save time after
-    # the reboot prepare (which will just start the run again after a while.
+    # the reboot prepare (which will just start the run again after a while.)
     # TODO: Determine if possible to change this behaviour.
     upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
     system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
@@ -258,6 +258,10 @@ function maybe_reboot() {
     reboot_function="/tmp/autopkgtest-reboot"
     if [ -f ${reboot_function} ]; then
         upgrade_log "Rebooting the system."
+        if [ "${RUNNING_BACKEND}" = "lxc" ]; then
+            # lxc reboot is doing something different to expected.
+            rm "${CANARY_NAME}"
+        fi
         $($reboot_function 'upgradetests')
     else
         upgrade_log "This testbed does not support rebooting."
