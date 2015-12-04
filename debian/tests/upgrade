@@ -7,9 +7,10 @@ SCRIPT_LOCATION="${BASE_LOCATION}/run_scripts"
 # pass/fail etc.) for now, then we'll use something better
 TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
+CANARY_NAME="/tmp/upgrade_script_reboot_canary"
 
 # Only copy on the first run through
-if [ ! -f "${BASE_LOCATION}" ]; then
+if [ ! -d "${BASE_LOCATION}" ]; then
    mkdir "${BASE_LOCATION}"
    mv "${TMP_LOCATION}/run_scripts" "${BASE_LOCATION}"
    mv "${TMP_LOCATION}/auto_upgrade_test_settings" "${BASE_LOCATION}"
@@ -44,6 +45,8 @@ function main() {
 
     if [ -z "${HAVE_REBOOTED}" ]; then
         upgrade_log "Beginning from the start."
+        create_reboot_canary
+
         # Haven't rebooted, starting from the beginning.
         output_running_system
 
@@ -53,15 +56,14 @@ function main() {
 
         pre_tests
 
-        do_upgrade
-
-        maybe_reboot
+        do_upgrade_and_maybe_reboot
     else
         upgrade_log "Skipping pre-tests as we have rebooted."
     fi
 
     # If we have rebooted we pick up from here.
     output_running_system
+    exit_if_reboot_canary_exists
     exit_if_not_running_expected_post_system
 
     post_tests
@@ -72,7 +74,6 @@ function main() {
 }
 
 function exit_if_not_running_initial_system() {
-    # This needs to branch if this is a lxc or device run.
     local running_system=$(_get_running_system_name)
     upgrade_log "Checking that running system (${running_system}) is ${INITIAL_SYSTEM_STATE}"
     if [ "${INITIAL_SYSTEM_STATE}" != "${running_system}" ]; then
@@ -84,7 +85,6 @@ function exit_if_not_running_initial_system() {
 
 # Can we de-dupe these methods too?
 function exit_if_not_running_expected_post_system() {
-    # This needs to branch if this is a lxc or device run.
     local running_system=$(_get_running_system_name)
     upgrade_log "Checking that running system (${running_system}) is ${POST_SYSTEM_STATE}"
     if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
@@ -94,9 +94,23 @@ function exit_if_not_running_expected_post_system() {
     fi
 }
 
+function create_reboot_canary() {
+    touch "${CANARY_NAME}"
+}
+
+function exit_if_reboot_canary_exists() {
+    if [ -f "${CANARY_NAME}" ]; then
+        upgrade_log "ERROR: system has not rebooted"
+        exit 1
+    fi
+}
+
 function _get_running_system_name() {
-    if running_on_device; then
-        echo "ubuntu-touch/rc-proposed/bq-aquaris.en:157"
+    if running_on_touch_device; then
+        local image_detail=$(system-image-cli -i)
+        local revno=$(echo "${image_detail}" | awk '/version\ version:/ {print $3}')
+        local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
+        echo "${channel}:${revno}"
     else
         echo $(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
     fi
@@ -159,15 +173,16 @@ function do_setup() {
     echo "---" >> "${TEST_RESULT_FILE}"
 }
 
-function do_upgrade() {
+function do_upgrade_and_maybe_reboot() {
     current="${INITIAL_SYSTEM_STATE}"
     target="${POST_SYSTEM_STATE}"
     upgrade_log "Attempting to upgrade from ${current} to ${target}"
 
-    if running_on_device; then
-        do_device_upgrade
+    if running_on_touch_device; then
+        do_touch_device_upgrade
     else
         do_normal_upgrade
+        maybe_reboot
     fi
 
     if [ $STATUS -ne 0 ]; then
@@ -178,15 +193,34 @@ function do_upgrade() {
     upgrade_log "Upgrading complete."
 }
 
-function do_device_upgrade() {
+function do_touch_device_upgrade() {
     upgrade_log "Starting device upgrade."
     local channel=`expr "${POST_SYSTEM_STATE}" : '\(^.*\):'`
     local revision=`expr "${POST_SYSTEM_STATE}" : '^.*:\([0-9]*\)$'`
     upgrade_log "Upgrading to: channel: ${channel} revno: ${revision}"
 
-    upgrade_log "Running command: system-image-cli --dry-run -v --no-reboot --channel ${channel} --build ${revision}"
-    sudo -A system-image-cli --dry-run -v --no-reboot --channel "${channel}" --build "${revision}"
+    # Do both so we have some history of the logs as well as save time after
+    # the reboot prepare (which will just start the run again after a while.)
+    # TODO: Determine if possible to change this behaviour.
+    upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
+    system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
+    upgrade_log "Now actually doing install now which will reboot the device."
+    # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
+    reboot_prepare
+    system-image-cli -v --channel "${channel}" --build "${revision}" &>> /home/phablet/veebers-reboot.log
     STATUS=$?
+}
+
+function reboot_prepare() {
+    prepare_function="/tmp/autopkgtest-reboot-prepare"
+    if [ -f ${prepare_function} ]; then
+        upgrade_log "Preparing the system for reboot."
+        $($prepare_function 'upgradetests')
+        sleep 30
+    else
+        upgrade_log "This testbed does not support rebooting."
+        exit 1
+    fi
 }
 
 function do_normal_upgrade() {
@@ -225,6 +259,10 @@ function maybe_reboot() {
     reboot_function="/tmp/autopkgtest-reboot"
     if [ -f ${reboot_function} ]; then
         upgrade_log "Rebooting the system."
+        if [ "${RUNNING_BACKEND}" = "lxc" ]; then
+            # lxc reboot is doing something different to expected.
+            rm "${CANARY_NAME}"
+        fi
         $($reboot_function 'upgradetests')
     else
         upgrade_log "This testbed does not support rebooting."
@@ -240,11 +278,11 @@ function collect_results() {
 }
 
 
-function running_on_device() {
+function running_on_touch_device() {
     TRUE=0
     FALSE=1
     # RUNNING_BACKEND is supplied by the configuration file.
-    if [ "${RUNNING_BACKEND}" = "device" ]; then
+    if [ "${RUNNING_BACKEND}" = "touch" ]; then
         return $TRUE
     else
         return $FALSE
@@ -252,9 +290,12 @@ function running_on_device() {
 }
 
 function output_running_system() {
-    if running_on_device; then
+    if running_on_touch_device; then
         # Return a string like: {channel}:{rev}
-        echo "ubuntu-touch/rc-proposed/bq-aquaris.en:157"
+        local image_detail=$(system-image-cli -i)
+        local revno=$(echo "${image_detail}" | awk '/version\ version:/ {print $3}')
+        local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
+        echo "${channel}:${revno}"
     else
         echo "Currently running: $(lsb_release -a)"
     fi

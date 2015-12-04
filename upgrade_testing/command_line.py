@@ -25,6 +25,7 @@ from upgrade_testing.preparation import (
     get_testbed_storage_location,
     prepare_test_environment,
 )
+from upgrade_testing.provisioning import run_command_with_logged_output
 
 import datetime
 import logging
@@ -136,7 +137,7 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
     # and doesn't need to worry about cleanup.
     with test_source_retriever(testsuite.test_source) as test_source_dir:
         adt_run_command = get_adt_run_command(
-            testsuite.provisioning.backend,
+            testsuite.provisioning,
             testrun_files,
             test_source_dir,
             output_dir,
@@ -144,15 +145,30 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
         subprocess.check_call(adt_run_command)
 
 
-def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
+def get_adt_run_command(
+        provisioning, testrun_files, test_source_dir, results_dir):
     """Construct the adt command to run.
 
-    :param testsuite: TestSpecification object containing test run details.
+    :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
+      object to retrieve adt details from.
+    :param testrun_files: upgrade_testing._hostprep.TestrunTempFiles object
+      providing temp/setup directory details
+    :param test_source_dir: Source directory where the run scripts are located.
+    :param results_dir: The directory path in which to place any artifacts and
+      results from the run.
 
     """
+
+    git_edition_location = _grab_git_version_autopkgtest(
+        testrun_files.testrun_tmp_dir
+    )
+
+    adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
+    # adt_run_exec = 'adt-run'
+
     # Default adt-run hardcoded adt command
     adt_cmd = [
-        'adt-run',
+        adt_run_exec,
         '-B',
         '--user=root',
         '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),
@@ -178,16 +194,38 @@ def get_adt_run_command(backend, testrun_files, test_source_dir, results_dir):
         )
     )
 
-    backend_args = backend.get_adt_run_args()
+    backend_args = provisioning.get_adt_run_args(
+        tmp_dir=testrun_files.testrun_tmp_dir
+    )
 
     return adt_cmd + ['---'] + backend_args
+
+
+def _grab_git_version_autopkgtest(tmp_dir):
+    # Grab the git version of autopkgtest so that we can use the latest
+    # features (i.e. reboot-prepare).
+    # This is needed as 3.14+ is not in vivid.
+    # TODO: Remove this need by grabbing it from backports or universe.
+    git_url = 'git://git.debian.org/git/autopkgtest/autopkgtest.git'
+    git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
+    git_command = ['git', 'clone', git_url, git_trunk_path]
+
+    run_command_with_logged_output(git_command)
+
+    return git_trunk_path
 
 
 def main():
     setup_logging()
     args = parse_args()
 
-    test_def_details = definition_reader(args.config)
+    try:
+        test_def_details = definition_reader(args.config)
+    except KeyError:
+        logger.error(
+            'Unable to parse configuration file: {}'.format(args.config)
+        )
+        sys.exit(1)
 
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)
@@ -197,14 +235,15 @@ def main():
         # raise an exception.
         if not testsuite.provisioning.backend_available():
             if args.provision:
-                testsuite.provisioning.backend_create()
+                logger.debug('Provising backend.')
+                testsuite.provisioning.create()
             else:
                 logger.error(
                     'No available backend for test: {}'.format(testsuite.name)
                 )
                 continue
         else:
-            logger.info('Backend is already available.')
+            logger.info('Backend is available.')
 
         # Setup output dir
         output_dir = get_output_dir(args)

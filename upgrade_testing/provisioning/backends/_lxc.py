@@ -67,7 +67,7 @@ class LXCBackend(ProviderBackend):
                 logger.info(line.strip('\n'))
         logger.info('Container created.')
 
-    def get_adt_run_args(self):
+    def get_adt_run_args(self, **kwargs):
         return ['lxc', '-s', 'adt-{}'.format(self.release)]
 
     @property
