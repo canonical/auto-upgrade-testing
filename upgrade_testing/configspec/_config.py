@@ -17,11 +17,17 @@
 #
 
 import logging
+import os
 import yaml
+
+from collections import namedtuple
 
 from upgrade_testing.provisioning import ProvisionSpecification
 
 logger = logging.getLogger(__name__)
+
+
+ScriptStore = namedtuple('ScriptStore', ['executables', 'location'])
 
 
 class TestSpecification:
@@ -33,14 +39,9 @@ class TestSpecification:
     """
     def __init__(self, details, provision_spec):
         self.provisioning = provision_spec
-        conf_version = str(details.get('conf_version', None))
 
-        # Rudimentary example of versioned configs.
         try:
-            if conf_version is None:
-                self._reader(details)
-            elif conf_version == "1.0":
-                self._reader_1_0(details)
+            self._reader(details)
         except KeyError as e:
             logger.error(
                 'Missing required configuration detail: {}'.format(str(e))
@@ -48,18 +49,21 @@ class TestSpecification:
 
     def _reader(self, details):
         self.name = details['testname']
-        # XXX There is a miss-naming here that needs to be touched up in the
-        # schema
-        self.pre_upgrade_scripts = details['test-details']['pre_upgrade_tests']
-        self.post_upgrade_tests = details['test-details']['post_upgrade_tests']
-        # This will cause issues! Perhaps we need to deprecate non 1.0 config.
-        self._test_source_dir = './'
 
-    def _reader_1_0(self, details):
-        self.name = details['testname']
-        self.pre_upgrade_scripts = details['pre_upgrade_scripts']
-        self.post_upgrade_tests = details['post_upgrade_tests']
-        self._test_source_dir = details['script_location']
+        script_location = details.get('script_location', None)
+
+        self.pre_upgrade_scripts = ScriptStore(
+            *_generate_script_list(
+                details['pre_upgrade_scripts'],
+                script_location
+            )
+        )
+        self.post_upgrade_tests = ScriptStore(
+            *_generate_script_list(
+                details['post_upgrade_tests'],
+                script_location
+            )
+        )
 
     @property
     def test_source(self):
@@ -74,6 +78,43 @@ class TestSpecification:
             name=self.name,
             prov=self.provisioning
         )
+
+
+def _generate_script_list(scripts_or_path, script_location=None):
+    """Return a tuple containing a list of script names and a location string.
+
+    Source can either be a path that contains executable files or a list of
+    names of an executable
+
+    """
+
+    if isinstance(scripts_or_path, list):
+        # Can we default script_location to './'?
+        if script_location is None:
+            raise ValueError('No script location supplied for scripts')
+        # Already list of scripts, return it.
+        return (scripts_or_path, script_location)
+    elif os.path.isdir(scripts_or_path):
+        if script_location is not None:
+            logger.warning(
+                'script_location ignored as scripts provided is a path'
+            )
+        abs_path = os.path.abspath(scripts_or_path)
+        protocol_path = 'file://{}'.format(abs_path)
+        return (_get_executable_files(abs_path), protocol_path)
+
+    raise ValueError(
+        'No scripts found. {} is neither a path or list of scripts'
+    )
+
+
+def _get_executable_files(abs_path):
+    def is_executable(path):
+        return os.path.isfile(path) and os.access(path, os.X_OK)
+    return [
+        f for f in os.listdir(abs_path)
+        if is_executable(os.path.join(abs_path, f))
+    ]
 
 
 def definition_reader(testdef_filepath, provisiondef_filepath=None):
