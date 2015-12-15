@@ -6,7 +6,7 @@
     arch: amd64
     image_name: wily_xenial_ubuntu_desktop_amd64.img
     build_args:
-     - "--userdata ./cloudinit/ubuntu-desktop"
+     - "--userdata ./cloudinit/ubuntu-desktop --timeout 14400"
     # First release is the initial and what will be provisioned.
     # For each release in the list after that the pre and post scripts will be
     # run and then the upgrade.
