@@ -80,11 +80,7 @@ class TouchBackend(ProviderBackend):
             logger.error(err)
             raise RuntimeError(err)
 
-        logger.info('Preparing to flash device')
-
-        self._put_device_in_bootloader()
-        flash_cmd = self._get_flash_command()
-        run_command_with_logged_output(flash_cmd)
+        self._flash_device()
 
         if not self._device_in_required_state():
             err_msg = 'Failed to flash the device into the required state.'
@@ -96,6 +92,15 @@ class TouchBackend(ProviderBackend):
         self._provision_networking()
 
         logger.info('Flashing completed..')
+
+    def _flash_device(self):
+        logger.info('Preparing to flash device')
+
+        self._put_device_in_bootloader()
+        flash_cmd = self._get_flash_command()
+        run_command_with_logged_output(flash_cmd)
+        logger.info('Waiting for device to appear')
+        wait_for_device()
 
     def _put_device_in_bootloader(self):
         logger.info('Putting device into bootloader')
@@ -236,3 +241,7 @@ def _get_device_current_state(serial=None):
         channel=image_details['channel'],
         revision=image_details['version_version']
     )
+
+def wait_for_device():
+    wait_cmd = ['timeout', '300', 'adb', 'wait-for-device']
+    run_command_with_logged_output(wait_cmd)
