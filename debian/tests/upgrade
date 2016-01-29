@@ -121,7 +121,7 @@ function _get_running_system_name() {
         local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
         echo "${channel}:${revno}"
     else
-        echo $(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
+        echo $(lsb_release -c| awk '{print $2}')
     fi
 }
 
