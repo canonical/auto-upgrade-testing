@@ -138,7 +138,7 @@ function _get_running_system_name() {
         local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
         echo "${channel}:${revno}"
     else
-        echo $(lsb_release -c| awk '{print $2}')
+        echo $(lsb_release -sc)
     fi
 }
 
@@ -220,7 +220,7 @@ function need_another_upgrade() {
 }
 
 function get_current_version() {
-    echo $(lsb_release -r | awk '{print $2}')
+    echo $(lsb_release -rs)
 }
 
 function get_potential_upgrade_version() {
