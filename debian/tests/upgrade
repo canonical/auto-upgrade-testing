@@ -57,6 +57,7 @@ function main() {
 
         pre_tests
 
+        store_prereboot_details
         do_upgrade_and_maybe_reboot
     else
         upgrade_log "Skipping pre-tests as we have rebooted."
@@ -65,6 +66,7 @@ function main() {
     # If we have rebooted we pick up from here.
     output_running_system
     exit_if_reboot_canary_exists
+    exit_if_havent_upgraded
 
     # Check if we need to do another upgrade/reboot
     if need_another_upgrade; then
@@ -103,8 +105,23 @@ function exit_if_not_running_expected_post_system() {
     fi
 }
 
+function exit_if_havent_upgraded() {
+    local running_system_version=$(get_current_version)
+    upgrade_log "Checking that an upgrade has occured."
+    if [ "${BEFORE_REBOOT_VERSION}" != "" ] && [ "${running_system_version}" == "${BEFORE_REBOOT_VERSION}" ]; then
+        upgrade_log "ERROR: Still the same system version after reboot"
+        exit 1
+    fi
+}
+
 function create_reboot_canary() {
     touch "${CANARY_NAME}"
+}
+
+function store_prereboot_details() {
+    # Store details that we'll use after a reboot.
+    # Current running version as we way need to reboot between versions.
+    echo "BEFORE_REBOOT_VERSION=$(get_current_version)" >> "${CONFIG_FILE}"
 }
 
 function exit_if_reboot_canary_exists() {
