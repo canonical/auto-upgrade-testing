@@ -237,8 +237,9 @@ function get_potential_upgrade_version() {
     fi
 }
 
+# version_lte and version_lt taken from: http://stackoverflow.com/a/4024263
 function version_lte() {
-    [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+    [  "$1" = "`echo -e "$1\n$2" | sort --version-sort | head -n1`" ]
 }
 
 function version_lt() {
