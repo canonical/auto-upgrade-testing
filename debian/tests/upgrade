@@ -220,7 +220,10 @@ function need_another_upgrade() {
 }
 
 function get_current_version() {
-    echo $(lsb_release -rs)
+    if running_on_touch_device; then
+        echo $(_get_running_system_name)
+    else
+        echo $(lsb_release -rs)
 }
 
 function get_potential_upgrade_version() {
