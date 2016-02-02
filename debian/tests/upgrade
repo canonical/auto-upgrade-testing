@@ -282,8 +282,8 @@ function do_upgrade_and_maybe_reboot() {
         maybe_reboot
     fi
 
-    if [ $STATUS -ne 0 ]; then
-        upgrade_log "Something went wrong with the upgrade."
+    if (( $STATUS != 0 )); then
+        upgrade_log "ERROR: Something went wrong with the upgrade."
         exit 1
     fi
 
@@ -301,11 +301,17 @@ function do_touch_device_upgrade() {
     # TODO: Determine if possible to change this behaviour.
     upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
     system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
-    upgrade_log "Now actually doing install now which will reboot the device."
-    # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
-    reboot_prepare
-    system-image-cli -v --channel "${channel}" --build "${revision}" &>> /home/phablet/veebers-reboot.log
-    STATUS=$?
+    local download_results=$?
+    if (( $download_results != 0 )); then
+        upgrade_log "Failed to download image details."
+        STATUS=$download_results
+    else
+        upgrade_log "Now actually doing install now which will reboot the device."
+        # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
+        reboot_prepare
+        system-image-cli -v --channel "${channel}" --build "${revision}" &>> "${TOUCH_REBOOT_LOG}"
+        STATUS=$?
+    fi
 }
 
 function reboot_prepare() {
