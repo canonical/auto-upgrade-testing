@@ -299,6 +299,13 @@ function do_touch_device_upgrade() {
     # Do both so we have some history of the logs as well as save time after
     # the reboot prepare (which will just start the run again after a while.)
     # TODO: Determine if possible to change this behaviour.
+
+    if ! have_internet_connection; then
+        upgrade_log "Aborting device upgrade due to no network connection."
+        STATUS=1
+        return
+    fi
+
     upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
     system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
     local download_results=$?
@@ -312,6 +319,23 @@ function do_touch_device_upgrade() {
         system-image-cli -v --channel "${channel}" --build "${revision}" &>> "${TOUCH_REBOOT_LOG}"
         STATUS=$?
     fi
+}
+
+function have_internet_connection() {
+    ping_count=0
+    max_ping=5
+    while  ! ping -c 1 launchpad.net > /dev/null 2>&1 && ((ping_count < max_ping)); do
+        update_log "Failed to ping launchpad.net. Seems there is no Internet connection"
+        ((ping_count++))
+        sleep 1
+    done
+    echo "Ping count: ${ping_count}"
+    if ((ping_count==max_ping)); then
+        return 1
+    else
+        return 0
+    fi
+
 }
 
 function reboot_prepare() {
