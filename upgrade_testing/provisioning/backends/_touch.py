@@ -110,7 +110,10 @@ class TouchBackend(ProviderBackend):
 
         self._put_device_in_bootloader()
         flash_cmd = self._get_flash_command()
-        run_command_with_logged_output(flash_cmd)
+        logger.info('Flashing device')
+        retcode = run_command_with_logged_output(flash_cmd)
+        if retcode != 0:
+            raise RuntimeError('Failed to flash the device')
         logger.info('Waiting for device to appear')
         wait_for_device()
 
