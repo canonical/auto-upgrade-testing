@@ -32,9 +32,10 @@ Required elements
 
 :password: Password for the device
 
-:revisions: This is a list of revisions that will be used. The first revision
-            listed will be the starting revision. All subsequent revisions will
-            be upgraded to.
+:revision: The revision of the provided channel to flash and provison on the
+           device. The device will be upgraded to the latest revision of the
+           same channel during the upgrade process.
+           N.B. There is no mechanism to upgrade to an arbitary revision.
 
 
 Optional elements

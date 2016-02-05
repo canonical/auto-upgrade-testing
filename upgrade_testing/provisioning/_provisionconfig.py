@@ -145,7 +145,7 @@ class TouchProvisionSpecification(ProvisionSpecification):
     def __init__(self, provision_config):
         try:
             self.channel = provision_config['channel']
-            self.revisions = provision_config['revisions']
+            self.revision = provision_config['revision']
             password = provision_config['password']
         except KeyError as e:
             raise ValueError('Missing config detail: {}'.format(str(e)))
@@ -167,12 +167,12 @@ class TouchProvisionSpecification(ProvisionSpecification):
 
     @property
     def system_states(self):
-        return [self._construct_state_string(r) for r in self.revisions]
+        return self._construct_state_string(self.revision)
 
     @property
     def initial_state(self):
         """Return the string indicating the required initial system state."""
-        return self._construct_state_string(self.revisions[0])
+        return self._construct_state_string(self.revision)
 
     @property
     def final_state(self):
