@@ -137,7 +137,7 @@ function exit_if_reboot_canary_exists() {
 }
 
 function output_extra_logging() {
-    # Touch devices need the upgrad log output (after the fact).
+    # Touch devices need the upgrade log output (after the fact).
     if running_on_touch_device; then
         upgrade_log "Output of upgrade log (after upgrade due to logging limitations."
         upgrade_log "--------------------------------------------------------------------------------"
