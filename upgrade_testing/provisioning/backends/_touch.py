@@ -188,6 +188,30 @@ class TouchBackend(ProviderBackend):
             revision=revision
         )
 
+    @staticmethod
+    def get_current_device_details(serial=None):
+        if serial is not None:
+            detail_cmd = [
+                'adb', '-s', serial, 'shell', 'system-image-cli', '-i'
+            ]
+        else:
+            detail_cmd = [
+                'adb', 'shell', 'system-image-cli', '-i'
+            ]
+
+        try:
+            output = subprocess.check_output(
+                detail_cmd,
+                universal_newlines=True
+            )
+            return {
+                det[0].replace(' ', '_'): det[1].lstrip(' ') for det in
+                [line.split(':') for line in output.split('\n') if line != '']
+            }
+        except subprocess.CalledProcessError as e:
+            logger.error('Failed to collect device details: '.format(str(e)))
+            raise RuntimeError('No Touch devices found.')
+
     def __repr__(self):
         return '{classname}(channel={channel} revno={revno})'.format(
             classname=self.__class__.__name__,
@@ -254,26 +278,9 @@ def _device_has_network_connection(serial=None):
         return False
 
 
-def _get_current_device_details(serial=None):
-    if serial is not None:
-        detail_cmd = ['adb', '-s', serial, 'shell', 'system-image-cli', '-i']
-    else:
-        detail_cmd = ['adb', 'shell', 'system-image-cli', '-i']
-
-    try:
-        output = subprocess.check_output(detail_cmd, universal_newlines=True)
-        return {
-            detail[0].replace(' ', '_'): detail[1].lstrip(' ') for detail in
-            [line.split(':') for line in output.split('\n') if line != '']
-        }
-    except subprocess.CalledProcessError as e:
-        logger.error('Failed to collect device details: '.format(str(e)))
-        raise RuntimeError('No Touch devices found.')
-
-
 def _get_device_current_state(serial=None):
     """Return {channel}:{rev} detail for the requested device."""
-    image_details = _get_current_device_details(serial)
+    image_details = TouchBackend.get_current_device_details(serial)
     return TouchBackend.format_device_state_string(
         channel=image_details['channel'],
         revision=image_details['version_version']
@@ -283,6 +290,7 @@ def _get_device_current_state(serial=None):
 def wait_for_device():
     wait_cmd = ['timeout', '300', 'adb', 'wait-for-device']
     run_command_with_logged_output(wait_cmd)
+
 
 def _validate_recovery_path(file_path):
     """Check if file exists. Raises ValueError if it cannot be found."""
