@@ -376,12 +376,14 @@ function maybe_reboot() {
 }
 
 function collect_results() {
-    # Move any files of interest into $TEST_RESULT_DIR
-    upgrade_log "Collecting results"
-    # get /var/log/dist-upgrade/*
-    # get /var/log/dpkg.log
+    # Move any files of interest into $TEST_RESULTS_DIR
+    upgrade_log "Collecting system details."
+    system_details_dir="${TEST_RESULTS_DIR}/system_details"
+    mkdir "${system_details_dir}"
+    cp -fr /var/log/dist-upgrade "${system_details_dir}/dist-upgrade/"
+    cp /var/log/dpkg.log "${system_details_dir}/"
+    cp -fr /etc/apt/ "${system_details_dir}/apt/"
 }
-
 
 function running_on_touch_device() {
     TRUE=0
