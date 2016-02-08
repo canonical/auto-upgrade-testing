@@ -49,13 +49,17 @@
         - timed: 'H H * * *'
     builders:
         - shell: |
+            rm -rf *
             export BRANCH=lp:auto-upgrade-testing # Until this is packaged, we branch for each run
             export PROFILE_NAME="{profile}.yaml"
             export PROFILE=profiles/$PROFILE_NAME
 
             export BRANCH_DIR=$WORKSPACE/auto-upgrade-testing
-            sudo rm -rf $BRANCH_DIR
             bzr branch $BRANCH $BRANCH_DIR
             cd $BRANCH_DIR
 
             sudo python3 -m upgrade_testing.command_line -c $PROFILE --provision
+    publishers:
+        - archive:
+            artifacts: '**/*'
+            allow-empty: 'true'
