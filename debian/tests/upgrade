@@ -49,7 +49,6 @@ function main() {
         upgrade_log "Beginning from the start."
         create_reboot_canary
 
-        # Haven't rebooted, starting from the beginning.
         output_running_system
 
         do_setup
@@ -58,6 +57,7 @@ function main() {
 
         pre_tests
 
+        store_prereboot_details
         do_upgrade_and_maybe_reboot
     else
         upgrade_log "Skipping pre-tests as we have rebooted."
@@ -66,11 +66,20 @@ function main() {
     # If we have rebooted we pick up from here.
     output_running_system
     exit_if_reboot_canary_exists
-    exit_if_not_running_expected_post_system
+    exit_if_havent_upgraded
 
-    post_tests
+    # Check if we need to do another upgrade/reboot
+    if need_another_upgrade; then
+        echo "Appears we're in a multi-part upgrade. Upgrading/rebooting again."
+        create_reboot_canary
+        do_upgrade_and_maybe_reboot
+    else
+        exit_if_not_running_expected_post_system
 
-    collect_results
+        post_tests
+
+        collect_results
+    fi
 
     exit $STATUS
 }
@@ -96,8 +105,23 @@ function exit_if_not_running_expected_post_system() {
     fi
 }
 
+function exit_if_havent_upgraded() {
+    local running_system_version=$(get_current_version)
+    upgrade_log "Checking that an upgrade has occured."
+    if [ "${BEFORE_REBOOT_VERSION}" != "" ] && [ "${running_system_version}" == "${BEFORE_REBOOT_VERSION}" ]; then
+        upgrade_log "ERROR: Still the same system version after reboot"
+        exit 1
+    fi
+}
+
 function create_reboot_canary() {
     touch "${CANARY_NAME}"
+}
+
+function store_prereboot_details() {
+    # Store details that we'll use after a reboot.
+    # Current running version as we way need to reboot between versions.
+    echo "BEFORE_REBOOT_VERSION=$(get_current_version)" >> "${CONFIG_FILE}"
 }
 
 function exit_if_reboot_canary_exists() {
@@ -114,7 +138,7 @@ function _get_running_system_name() {
         local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
         echo "${channel}:${revno}"
     else
-        echo $(lsb_release -c | sed -e "s/\bCodename:\s*\(\w*\)/\1/")
+        echo $(lsb_release -sc)
     fi
 }
 
@@ -173,6 +197,62 @@ function do_setup() {
     # Make sure the output results file is available and proper yaml.
     mkdir "${TEST_RESULTS_DIR}"
     echo "---" >> "${TEST_RESULT_FILE}"
+}
+
+function need_another_upgrade() {
+    # Check if we're not running the right version
+    # If not are we able to upgrade to the right version?
+    if running_on_touch_device; then
+        return 1
+    fi
+
+    local running_system=$(_get_running_system_name)
+    if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
+        potential_upgrade_version=$(get_potential_upgrade_version)
+        current_version=$(get_current_version)
+        echo "Comparing ${potential_upgrade_version} against ${current_version}"
+        # we can upgrade further and the upgrade target is greater than our current system.
+        if [ "${potential_upgrade_version}" ] && version_lt "${current_version}" "${potential_upgrade_version}"; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+function get_current_version() {
+    if running_on_touch_device; then
+        echo $(_get_running_system_name)
+    else
+        echo $(lsb_release -rs)
+    fi
+}
+
+function get_potential_upgrade_version() {
+    # Attempt to get the version that we would upgrade to. Attempts to use
+    # development version if needed.
+    # Might return an empty string if there are no upgrade candidates at all.
+    # Always return empty string for touch devices.
+    if running_on_touch_device; then
+        echo ""
+    fi
+
+    local version=$(do-release-upgrade -c | awk '/New release/ {print $3}' | tr -d \')
+    if [ ! "${version}" ]; then
+        # Lets try for a development version
+        local version=$(do-release-upgrade -c -d | awk '/New release/ {print $3}' | tr -d \')
+        echo "${version}"
+    else
+        echo "${version}"
+    fi
+}
+
+# version_lte and version_lt taken from: http://stackoverflow.com/a/4024263
+function version_lte() {
+    [  "$1" = "`echo -e "$1\n$2" | sort --version-sort | head -n1`" ]
+}
+
+function version_lt() {
+    [ "$1" = "$2" ] && return 1 || version_lte $1 $2
 }
 
 function do_upgrade_and_maybe_reboot() {
