@@ -229,6 +229,15 @@ def main():
             'Unable to parse configuration file: {}'.format(args.config)
         )
         sys.exit(1)
+    except ValueError as e:
+        logger.error(
+            'Unable to parse configuration file details from config {}.\n'
+            'ERROR: {}'.format(
+                args.config,
+                e
+            )
+        )
+        sys.exit(1)
 
     # For each test definition ensure that the required backend is available,
     # if not either error or create it (depending on args.)

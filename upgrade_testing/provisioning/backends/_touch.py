@@ -40,7 +40,7 @@ class TouchBackend(ProviderBackend):
         self.serial = serial
         self.password = password
 
-        self.recovery_file = recovery
+        self.recovery_file = _validate_recovery_path(recovery)
 
     def available(self):
         """Return true if a device is connected and it's in the desired state.
@@ -283,3 +283,11 @@ def _get_device_current_state(serial=None):
 def wait_for_device():
     wait_cmd = ['timeout', '300', 'adb', 'wait-for-device']
     run_command_with_logged_output(wait_cmd)
+
+def _validate_recovery_path(file_path):
+    """Check if file exists. Raises ValueError if it cannot be found."""
+    if not os.path.exists(file_path):
+        raise ValueError(
+            'Recovery file could not be found: "{}"'.format(file_path)
+        )
+    return file_path
