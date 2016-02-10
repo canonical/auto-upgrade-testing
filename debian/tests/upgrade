@@ -306,8 +306,8 @@ function do_touch_device_upgrade() {
         return
     fi
 
-    upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
-    system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
+    upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel}"
+    system-image-cli -v --no-reboot --channel "${channel}"
     local download_results=$?
     if (( $download_results != 0 )); then
         upgrade_log "Failed to download image details."
@@ -316,7 +316,7 @@ function do_touch_device_upgrade() {
         upgrade_log "Now actually doing install now which will reboot the device."
         # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
         reboot_prepare
-        system-image-cli -v --channel "${channel}" --build "${revision}" &>> "${TOUCH_REBOOT_LOG}"
+        system-image-cli -v --channel "${channel}" &>> "${TOUCH_REBOOT_LOG}"
         STATUS=$?
     fi
 }

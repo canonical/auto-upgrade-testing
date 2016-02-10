@@ -17,6 +17,8 @@
 #
 
 import logging
+import re
+import subprocess
 
 from upgrade_testing.provisioning import backends
 
@@ -143,7 +145,7 @@ class TouchProvisionSpecification(ProvisionSpecification):
     def __init__(self, provision_config):
         try:
             self.channel = provision_config['channel']
-            self.revisions = provision_config['revisions']
+            self.revision = provision_config['revision']
             password = provision_config['password']
         except KeyError as e:
             raise ValueError('Missing config detail: {}'.format(str(e)))
@@ -165,17 +167,57 @@ class TouchProvisionSpecification(ProvisionSpecification):
 
     @property
     def system_states(self):
-        return [self._construct_state_string(r) for r in self.revisions]
+        return self._construct_state_string(self.revision)
 
     @property
     def initial_state(self):
         """Return the string indicating the required initial system state."""
-        return self._construct_state_string(self.revisions[0])
+        return self._construct_state_string(self.revision)
 
     @property
     def final_state(self):
         """Return the string indicating the required final system state."""
-        return self._construct_state_string(self.revisions[-1])
+        return self._construct_state_string(
+            self._get_latest_revno_for_channel()
+        )
+
+    def _get_latest_revno_for_channel(self):
+        """Given a revision detail determine the most current revno.
+
+        Used to check if the device is updated to the correct revision.
+
+        """
+        device = self._get_connected_device_name()
+        cmd = [
+            'ubuntu-device-flash',
+            'query',
+            '--channel={}'.format(self.channel),
+            '--device={}'.format(device),
+            '--show-image'
+        ]
+        try:
+            output = subprocess.check_output(cmd, universal_newlines=True)
+            revno = re.search('^Version: (.*)$', output, re.MULTILINE).group(1)
+            return revno
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                'Failed to query ubuntu-device-flash to determine current '
+                'channel revno: {}'.format(e)
+            )
+        except AttributeError:
+            raise RuntimeError(
+                'Unable to parse ubuntu-device-flash output'
+            )
+
+    def _get_connected_device_name(self):
+        # Perhaps this should live in the backend.
+        details = backends.TouchBackend.get_current_device_details(
+            self.backend.serial
+        )
+        try:
+            return details['device_name']
+        except KeyError:
+            raise RuntimeError('Unable to determine the device name.')
 
     @property
     def backend_name(self):
