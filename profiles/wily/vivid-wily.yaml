@@ -1,15 +1,1 @@
----
-- testname: "Vivid->Wily basic upgrade"
-  backend: lxc
-
-  # I think this section should be a list so it's possible to start at precise,
-  # go to trusty & test then upgrade to the next and test, all without starting
-  # afresh.
-  test-details:
-    start-release: "vivid"
-    end-release: "wily"
-    arch: amd64
-    pre_upgrade_tests:
-      - tests/null
-    post_upgrade_tests:
-      - tests/null
+../vivid-wily.yaml
