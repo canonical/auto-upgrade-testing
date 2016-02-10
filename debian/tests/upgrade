@@ -10,6 +10,10 @@ TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 CANARY_NAME="/tmp/upgrade_script_reboot_canary"
 
+# Due to reboot_prepare we lose the logs from the upgrade process. Store them
+# somewhere and add them to the output once we come back from reboot.
+TOUCH_REBOOT_LOG="/home/phablet/tmp_auto-upgrade-test_upgrade.log"
+
 # Only copy on the first run through
 if [ ! -d "${BASE_LOCATION}" ]; then
    mkdir "${BASE_LOCATION}"
@@ -65,6 +69,7 @@ function main() {
 
     # If we have rebooted we pick up from here.
     output_running_system
+    output_extra_logging
     exit_if_reboot_canary_exists
     exit_if_havent_upgraded
 
@@ -128,6 +133,16 @@ function exit_if_reboot_canary_exists() {
     if [ -f "${CANARY_NAME}" ]; then
         upgrade_log "ERROR: system has not rebooted"
         exit 1
+    fi
+}
+
+function output_extra_logging() {
+    # Touch devices need the upgrade log output (after the fact).
+    if running_on_touch_device; then
+        upgrade_log "Output of upgrade log (after upgrade due to logging limitations."
+        upgrade_log "--------------------------------------------------------------------------------"
+        cat "${TOUCH_REBOOT_LOG}"
+        upgrade_log "--------------------------------------------------------------------------------"
     fi
 }
 
@@ -267,8 +282,8 @@ function do_upgrade_and_maybe_reboot() {
         maybe_reboot
     fi
 
-    if [ $STATUS -ne 0 ]; then
-        upgrade_log "Something went wrong with the upgrade."
+    if (( $STATUS != 0 )); then
+        upgrade_log "ERROR: Something went wrong with the upgrade."
         exit 1
     fi
 
@@ -284,13 +299,43 @@ function do_touch_device_upgrade() {
     # Do both so we have some history of the logs as well as save time after
     # the reboot prepare (which will just start the run again after a while.)
     # TODO: Determine if possible to change this behaviour.
+
+    if ! have_internet_connection; then
+        upgrade_log "Aborting device upgrade due to no network connection."
+        STATUS=1
+        return
+    fi
+
     upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel} --build ${revision}"
     system-image-cli -v --no-reboot --channel "${channel}" --build "${revision}"
-    upgrade_log "Now actually doing install now which will reboot the device."
-    # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
-    reboot_prepare
-    system-image-cli -v --channel "${channel}" --build "${revision}" &>> /home/phablet/veebers-reboot.log
-    STATUS=$?
+    local download_results=$?
+    if (( $download_results != 0 )); then
+        upgrade_log "Failed to download image details."
+        STATUS=$download_results
+    else
+        upgrade_log "Now actually doing install now which will reboot the device."
+        # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
+        reboot_prepare
+        system-image-cli -v --channel "${channel}" --build "${revision}" &>> "${TOUCH_REBOOT_LOG}"
+        STATUS=$?
+    fi
+}
+
+function have_internet_connection() {
+    ping_count=0
+    max_ping=5
+    while  ! ping -c 1 launchpad.net > /dev/null 2>&1 && ((ping_count < max_ping)); do
+        update_log "Failed to ping launchpad.net. Seems there is no Internet connection"
+        ((ping_count++))
+        sleep 1
+    done
+    echo "Ping count: ${ping_count}"
+    if ((ping_count==max_ping)); then
+        return 1
+    else
+        return 0
+    fi
+
 }
 
 function reboot_prepare() {

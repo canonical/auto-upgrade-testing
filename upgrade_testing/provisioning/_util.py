@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 def run_command_with_logged_output(command):
+    """Run provided command while outputting stdout & stderr in 'real time'.
+
+    :returns: Returncode of command that was run.
+
+    """
     logger.debug('Running command: {}'.format(command))
     with subprocess.Popen(
             command,
@@ -33,3 +38,5 @@ def run_command_with_logged_output(command):
     ) as proc:
         for line in proc.stdout:
             logger.info(line.strip('\n'))
+        proc.wait()
+        return proc.returncode

@@ -40,7 +40,6 @@ class TouchBackend(ProviderBackend):
         self.serial = serial
         self.password = password
 
-        # TODO: Might require recovery file
         self.recovery_file = recovery
 
     def available(self):
@@ -49,7 +48,13 @@ class TouchBackend(ProviderBackend):
         """
         return (
             _device_connected(self.serial)
-            and self._device_in_required_state()
+            and self._device_in_available_state()
+        )
+
+    def _device_in_available_state(self):
+        return (
+            self._device_in_required_state()
+            and _device_has_network_connection()
         )
 
     def _device_in_required_state(self):
@@ -58,7 +63,10 @@ class TouchBackend(ProviderBackend):
             self.revision
         )
         actual_state = _get_device_current_state(self.serial)
-        return required_state == actual_state
+        if required_state != actual_state:
+            logger.info('Required and actual flash state different')
+            return False
+        return True
 
     def create(self):
         """Ensures that the testbed is flashed and ready to use.
@@ -73,6 +81,10 @@ class TouchBackend(ProviderBackend):
 
         if self._device_in_required_state():
             logger.info('Device is already in required state')
+            if not _device_has_network_connection(self.serial):
+                logger.info('Enabling network connection')
+                self._provision_networking()
+            logger.info('Device is ready.')
             return
 
         if not _device_connected(self.serial):
@@ -129,11 +141,20 @@ class TouchBackend(ProviderBackend):
         return cmd
 
     def _provision_networking(self):
+        """Provision network on device using default network.
+
+        :raises RuntimeError: If the provisioning fails
+
+        """
         cmd = ['phablet-network']
         if self.serial is not None:
             cmd.extend('-s', self.serial)
         # TODO: Possibly need to handle network files passed in?
-        run_command_with_logged_output(cmd)
+        retcode = run_command_with_logged_output(cmd)
+        if retcode != 0:
+            err = "Failed to provision network."
+            logger.error(err)
+            raise RuntimeError(err)
 
     def get_adt_run_args(self, **kwargs):
         try:
@@ -217,6 +238,22 @@ def _get_connected_serials():
     return [s for s in serials if s != '']
 
 
+def _device_has_network_connection(serial=None):
+    network_cmd = ['adb']
+    if serial is not None:
+        network_cmd.extend(['-s', serial])
+    # Need to quote the whole ping command so the echo does't happen on the
+    # calling side.
+    network_cmd.extend(
+        ['shell', 'ping -c 1 launchpad.net > /dev/null 2>&1 && echo Y']
+    )
+    try:
+        output = subprocess.check_output(network_cmd)
+        return output.rstrip() == b'Y'
+    except subprocess.CalledProcessError:
+        return False
+
+
 def _get_current_device_details(serial=None):
     if serial is not None:
         detail_cmd = ['adb', '-s', serial, 'shell', 'system-image-cli', '-i']
@@ -241,6 +278,7 @@ def _get_device_current_state(serial=None):
         channel=image_details['channel'],
         revision=image_details['version_version']
     )
+
 
 def wait_for_device():
     wait_cmd = ['timeout', '300', 'adb', 'wait-for-device']
