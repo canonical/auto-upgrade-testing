@@ -15,7 +15,7 @@
   # Or a bzr path to the location (that will be exported).
   #script_location: lp:~canonical-platform-qa/+junk/autopkgtest-upgrade-testing/tests
   pre_upgrade_scripts:
-    - tests/lts-desktop/pre
+    - lts-desktop/pre
 
   post_upgrade_tests:
-    - tests/lts-desktop/post
+    - lts-desktop/post
