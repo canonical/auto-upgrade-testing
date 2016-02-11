@@ -1,11 +1,10 @@
 ---
-- testname: "wily->xenial basic upgrade"
+- testname: "trusty->xenial basic upgrade"
   provisioning:
-    backend: qemu
+    backend: lxc
     arch: amd64
-    image_name: wily_xenial_basic_amd64.img
     releases:
-      - "wily"
+      - "trusty"
       - "xenial"
 
   script_location: file://./tests

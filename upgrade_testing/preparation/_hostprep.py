@@ -66,11 +66,9 @@ def prepare_test_environment(testsuite):
         logger.info('Unbuilt dir: {}'.format(unbuilt_dir))
 
         pre_path = os.path.join(temp_dir, 'pre_scripts')
-        os.makedirs(pre_path)
         _copy_script_files(testsuite.pre_upgrade_scripts.location, pre_path)
 
         post_path = os.path.join(temp_dir, 'post_scripts')
-        os.makedirs(post_path)
         _copy_script_files(testsuite.post_upgrade_tests.location, post_path)
 
         yield TestrunTempFiles(

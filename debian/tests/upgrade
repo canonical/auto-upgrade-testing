@@ -279,6 +279,10 @@ function do_upgrade_and_maybe_reboot() {
         do_touch_device_upgrade
     else
         do_normal_upgrade
+        if (( $STATUS != 0 )); then
+            upgrade_log "ERROR: Something went wrong with the upgrade."
+            exit 1
+        fi
         maybe_reboot
     fi
 
@@ -352,8 +356,9 @@ function do_normal_upgrade() {
     upgrade_log "Starting machine upgrade."
 
     export DEBIAN_FRONTEND=noninteractive
-	# Ensure we have do-release-upgrade
+    # Ensure we have do-release-upgrade
     apt-get update
+    apt-get dist-upgrade
     apt-get -y --force-yes install openssh-server update-manager-core
     do-release-upgrade -d -f DistUpgradeViewNonInteractive
     STATUS=$?

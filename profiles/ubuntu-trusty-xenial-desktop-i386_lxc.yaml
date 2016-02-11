@@ -1,16 +1,15 @@
 ---
-- testname: "Precise->Trusty basic upgrade"
+- testname: "trusty->xenial desktop upgrade"
   provisioning:
     backend: lxc
-    arch: amd64
-    distribution: ubuntu
+    arch: i386
     releases:
-      - "precise"
       - "trusty"
+      - "xenial"
 
   script_location: file://./tests
   pre_upgrade_scripts:
-    - "null"
+    - lts-desktop/pre
 
   post_upgrade_tests:
-    - "null"
+    - lts-desktop/post
