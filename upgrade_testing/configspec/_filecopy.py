@@ -52,10 +52,7 @@ def test_source_retriever(source_location, dest_dir):
 
 def _local_file_retrieval(source, dest_dir):
     source_path = os.path.abspath(source.replace('file://', ''))
-    for filename in os.listdir(source_path):
-        full_filename = os.path.join(source_path, filename)
-        if os.path.isfile(full_filename):
-            shutil.copy(full_filename, dest_dir)
+    shutil.copytree(source_path, dest_dir)
     return dest_dir
 
 
