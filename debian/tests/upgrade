@@ -279,6 +279,10 @@ function do_upgrade_and_maybe_reboot() {
         do_touch_device_upgrade
     else
         do_normal_upgrade
+        if (( $STATUS != 0 )); then
+            upgrade_log "ERROR: Something went wrong with the upgrade."
+            exit 1
+        fi
         maybe_reboot
     fi
 
