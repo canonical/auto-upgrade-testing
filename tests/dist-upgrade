@@ -1,5 +1,0 @@
-#!/bin/sh
-# Simple script that fires off a dist-upgrade
-
-apt-get dist-upgrade -y
-exit $?

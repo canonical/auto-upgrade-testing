@@ -356,8 +356,9 @@ function do_normal_upgrade() {
     upgrade_log "Starting machine upgrade."
 
     export DEBIAN_FRONTEND=noninteractive
-	# Ensure we have do-release-upgrade
+    # Ensure we have do-release-upgrade
     apt-get update
+    apt-get dist-upgrade
     apt-get -y --force-yes install openssh-server update-manager-core
     do-release-upgrade -d -f DistUpgradeViewNonInteractive
     STATUS=$?
