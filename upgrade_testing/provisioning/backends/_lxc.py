@@ -18,8 +18,8 @@
 
 import logging
 import lxc
-import subprocess
 
+from upgrade_testing.provisioning._util import run_command_with_logged_output
 from upgrade_testing.provisioning.backends._base import ProviderBackend
 
 logger = logging.getLogger(__name__)
@@ -27,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 class LXCBackend(ProviderBackend):
 
-    # We can change the Backends to require just what they need. In this case
-    # it would be distribution, release name (, arch)
-    def __init__(self, release, distribution='ubuntu'):
+    def __init__(self, release, distribution, arch):
         """Provide backend capabilities as requested in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
@@ -38,44 +36,47 @@ class LXCBackend(ProviderBackend):
         """
         self.release = release
         self.distro = distribution
+        self.arch = arch
 
     def available(self):
         """Return true if an lxc container exists that matches the provided
         args.
 
         """
-        container_name = 'adt-{}'.format(self.release)
+        container_name = self._get_container_name()
         logger.info('Checking for {}'.format(container_name))
         return container_name in lxc.list_containers()
+
+    def _get_container_name(self):
+        return 'adt-{}-{}'.format(self.release, self.arch)
 
     def create(self):
         """Create an lxc container."""
 
         logger.info('Creating lxc container for run.')
-        # Use sudo here as it's needed for building the lxc container.
-        # No don't use it here, the whole script needs sudo, need to sort the
-        # bzr perms diff.
-        cmd = 'adt-build-lxc {} {}'.format(
-            self.distro, self.release
-        )
-        # TODO: Provide further checking here.
-        with subprocess.Popen(
-                cmd, shell=True, stdout=subprocess.PIPE,
-                bufsize=1, universal_newlines=True
-        ) as p:
-            for line in p.stdout:
-                logger.info(line.strip('\n'))
+
+        cmd = [
+            'adt-build-lxc',
+            self.distro,
+            self.release,
+            self.arch,
+        ]
+        retcode = run_command_with_logged_output(cmd)
+        if retcode != 0:
+            raise RuntimeError('Failed to create lxc container.')
+
         logger.info('Container created.')
 
     def get_adt_run_args(self, **kwargs):
-        return ['lxc', '-s', 'adt-{}'.format(self.release)]
+        return ['lxc', '-s', self._get_container_name()]
 
     @property
     def name(self):
         return 'lxc'
 
     def __repr__(self):
-        return '{classname}(release={release})'.format(
+        return '{classname}(release={release}, arch={arch})'.format(
             classname=self.__class__.__name__,
-            release=self.release
+            release=self.release,
+            arch=self.arch,
         )
