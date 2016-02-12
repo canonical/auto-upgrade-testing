@@ -94,10 +94,12 @@ class LXCProvisionSpecification(ProvisionSpecification):
         # Defaults to ubuntu
         self.distribution = provision_config.get('distribution', 'ubuntu')
         self.releases = provision_config['releases']
+        self.arch = provision_config['arch']
 
         self.backend = backends.LXCBackend(
             self.initial_state,
-            self.distribution
+            self.distribution,
+            self.arch
         )
 
     @property
