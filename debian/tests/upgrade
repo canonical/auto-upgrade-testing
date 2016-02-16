@@ -38,6 +38,9 @@ function upgrade_log() {
 }
 
 function cleanup() {
+    # Collect the results at exit so we cover both successful runs and
+    # failures.
+    collect_results
     cp "${CONFIG_FILE}" "${TEST_RESULTS_DIR}"
     upgrade_log "Cleaning up configuration files."
     rm -r "${BASE_LOCATION}"
@@ -82,8 +85,6 @@ function main() {
         exit_if_not_running_expected_post_system
 
         post_tests
-
-        collect_results
     fi
 
     exit $STATUS
