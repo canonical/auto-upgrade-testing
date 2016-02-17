@@ -1,5 +1,5 @@
 ---
-- testname: "trusty->xenial basic upgrade"
+- testname: "trusty->xenial desktop upgrade"
   provisioning:
     backend: qemu
     arch: amd64

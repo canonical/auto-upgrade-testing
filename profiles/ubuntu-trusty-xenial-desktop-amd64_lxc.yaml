@@ -3,6 +3,8 @@
   provisioning:
     backend: lxc
     arch: amd64
+    build_args:
+     - "--userdata ./cloudinit/ubuntu-desktop --timeout 14400"
     releases:
       - "trusty"
       - "xenial"
