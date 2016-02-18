@@ -50,7 +50,10 @@ class TestSpecification:
     def _reader(self, details):
         self.name = details['testname']
 
-        script_location = details.get('script_location', None)
+        script_location = _get_script_location_path(
+            details,
+            self.provisioning._provisionconfig_path
+        )
 
         self.pre_upgrade_scripts = ScriptStore(
             *_generate_script_list(
@@ -80,6 +83,26 @@ class TestSpecification:
         )
 
 
+def _get_script_location_path(provision_details, provisionfile_path):
+    """Return the full path for a script location."""
+    # If script_location starts with ./ or ../ then we need to get the abs path
+    # of the provision file and append it.
+    location = provision_details.get('script_location', None)
+    if location is None:
+        return location
+    if location.startswith('file://.'):
+        provisionfile_dir = os.path.dirname(provisionfile_path)
+        full_path = os.path.abspath(
+            os.path.join(
+                provisionfile_dir,
+                location.replace('file://', '')
+            )
+        )
+        return 'file://{}'.format(full_path)
+    # Seems location is a full abs path already.
+    return location
+
+
 def _generate_script_list(scripts_or_path, script_location=None):
     """Return a tuple containing a list of script names and a location string.
 
@@ -89,19 +112,21 @@ def _generate_script_list(scripts_or_path, script_location=None):
     """
 
     if isinstance(scripts_or_path, list):
-        # Can we default script_location to './'?
         if script_location is None:
             raise ValueError('No script location supplied for scripts')
-        # Already list of scripts, return it.
-        return (scripts_or_path, script_location)
+        # scripts is already a list of scripts.
+        return(scripts_or_path, script_location)
     elif os.path.isdir(scripts_or_path):
         if script_location is not None:
-            logger.warning(
-                'script_location ignored as scripts provided is a path'
+            abs_path = os.path.abspath(
+                os.path.join(
+                    script_location.replace('file://'),
+                    scripts_or_path
+                )
             )
-        abs_path = os.path.abspath(scripts_or_path)
-        protocol_path = 'file://{}'.format(abs_path)
-        return (_get_executable_files(abs_path), protocol_path)
+        else:
+            abs_path = scripts_or_path
+        return (_get_executable_files(abs_path), script_location)
 
     raise ValueError(
         'No scripts found. {} is neither a path or list of scripts'
@@ -127,17 +152,21 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     :raises KeyError: if there is any invalid or unknown config details.
 
     """
-    testdef = _load_testdef(testdef_filepath)
+    testdef = _load_configdef(testdef_filepath)
 
     specs = []
     for test in testdef:
         if provisiondef_filepath is None:
-            provision_details = ProvisionSpecification.from_testspec(test)
+            provision_details = ProvisionSpecification.from_testspec(
+                test,
+                testdef_filepath
+            )
         else:
             # Perhaps we want to be able to pass args to the commandline
-            # instead of writiing a file? We would always fudge that and
+            # instead of writing a file? We would always fudge that and
             # write to a file-like object and use that instead.
             provision_details = ProvisionSpecification.from_provisionspec(
+                _load_configdef(provisiondef_filepath),
                 provisiondef_filepath
             )
 
@@ -145,7 +174,7 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     return specs
 
 
-def _load_testdef(testdef_filepath):
+def _load_configdef(testdef_filepath):
     # Need a better way to confirm this.
     if testdef_filepath.endswith('.yaml'):
         return _read_yaml_config(testdef_filepath)
