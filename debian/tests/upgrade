@@ -90,6 +90,15 @@ function main() {
     exit $STATUS
 }
 
+function exit_with_log_if_nonzero() {
+    local retcode=$1
+    local error_message=$2
+    if (( retcode != 0 )); then
+        upgrade_log "ERROR: ${error_message}"
+        exit 1
+    fi
+}
+
 function exit_if_not_running_initial_system() {
     local running_system=$(_get_running_system_name)
     upgrade_log "Checking that running system (${running_system}) is ${INITIAL_SYSTEM_STATE}"
@@ -280,17 +289,11 @@ function do_upgrade_and_maybe_reboot() {
         do_touch_device_upgrade
     else
         do_normal_upgrade
-        if (( $STATUS != 0 )); then
-            upgrade_log "ERROR: Something went wrong with the upgrade."
-            exit 1
-        fi
+        exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
         maybe_reboot
     fi
 
-    if (( $STATUS != 0 )); then
-        upgrade_log "ERROR: Something went wrong with the upgrade."
-        exit 1
-    fi
+    exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
 
     upgrade_log "Upgrading complete."
 }
