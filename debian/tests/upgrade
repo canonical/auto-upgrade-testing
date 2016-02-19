@@ -62,7 +62,8 @@ function main() {
 
         exit_if_not_running_initial_system
 
-        pre_tests
+        STATUS=$(pre_tests)
+        exit_with_log_if_nonzero $STATUS "ERROR: Something went during the prerun scripts."
 
         store_prereboot_details
         do_upgrade_and_maybe_reboot
@@ -84,7 +85,8 @@ function main() {
     else
         exit_if_not_running_expected_post_system
 
-        post_tests
+        # No need to explicitly exit here as we're at the end.
+        STATUS=$(post_tests)
     fi
 
     exit $STATUS
@@ -173,6 +175,7 @@ function pre_tests() {
     #  - Run script
     #  - Log success or failure of script
     echo "pre_script_output:" >> ${TEST_RESULT_FILE}
+    success=0
     for test in $PRE_TESTS_TO_RUN; do
 
         local this_script_results="${TEST_RESULTS_DIR}/pre_${test}/"
@@ -186,10 +189,12 @@ function pre_tests() {
         local test_result=$?
         if (( test_result != 0 )); then
             echo "  \"${test}\": FAIL" >> ${TEST_RESULT_FILE}
+            success=1
         else
             echo "  \"${test}\": PASS" >> ${TEST_RESULT_FILE}
         fi
     done
+    return $success
 }
 
 function post_tests() {
@@ -198,6 +203,7 @@ function post_tests() {
     #  - Run script
     #  - Log success or failure of script
     echo "post_test_output:" >> $TEST_RESULT_FILE
+    success=0
     for test in $POST_TESTS_TO_RUN; do
         local this_script_results="${TEST_RESULTS_DIR}/post_${test}/"
         mkdir "${this_script_results}"
@@ -211,10 +217,12 @@ function post_tests() {
         local test_result=$?
         if (( test_result != 0 )); then
             echo "  \"${test}\": FAIL" >> $TEST_RESULT_FILE
+            success=1
         else
             echo "  \"${test}\": PASS" >> $TEST_RESULT_FILE
         fi
     done
+    return $success
 }
 
 function do_setup() {
