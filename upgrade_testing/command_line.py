@@ -153,13 +153,17 @@ def get_adt_run_command(
 
     """
 
+    print(os.environ)
     if 'AUTOPKGTEST_GIT_REPO' in os.environ:
+        print('found var')
         git_edition_location = _grab_git_version_autopkgtest(
-            testrun_files.testrun_tmp_dir, os.environ['AUTOPKGTEST_GIT_REPO']
+            testrun_files.testrun_tmp_dir,
+            git_url=os.environ['AUTOPKGTEST_GIT_REPO'],
         )
 
         adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
     else:
+        print('did not')
         adt_run_exec = 'adt-run'
 
     # Default adt-run hardcoded adt command
