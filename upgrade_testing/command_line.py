@@ -214,7 +214,7 @@ def _grab_git_version_autopkgtest(
     # This is needed as 3.14+ is not in vivid.
     # TODO: add support for a specific revision
     git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-    git_command = ['git', 'clone', git_url, git_trunk_path]
+    git_command = ['git', 'checkout', git_url, git_trunk_path]
 
     run_command_with_logged_output(git_command)
 
