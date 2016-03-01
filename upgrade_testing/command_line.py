@@ -132,6 +132,7 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
     """
     # we can change 'test_source_retriever' so that it uses the testurn_files
     # and doesn't need to worry about cleanup.
+    print('getting adt run command')
     adt_run_command = get_adt_run_command(
         testsuite.provisioning,
         testrun_files,
@@ -268,7 +269,9 @@ def main():
         # Setup output dir
         output_dir = get_output_dir(args)
 
+        print('with time!')
         with prepare_test_environment(testsuite) as created_files:
+            print('executing adt')
             execute_adt_run(testsuite, created_files, output_dir)
 
         display_results(output_dir)
