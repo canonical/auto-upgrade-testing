@@ -153,12 +153,14 @@ def get_adt_run_command(
 
     """
 
-    git_edition_location = _grab_git_version_autopkgtest(
-        testrun_files.testrun_tmp_dir
-    )
+    if sys.env['AUTOPKGTEST_GIT_REPO']:
+        git_edition_location = _grab_git_version_autopkgtest(
+            testrun_files.testrun_tmp_dir
+        )
 
-    adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
-    # adt_run_exec = 'adt-run'
+        adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
+    else:
+        adt_run_exec = 'adt-run'
 
     # Default adt-run hardcoded adt command
     adt_cmd = [
@@ -204,12 +206,13 @@ def get_adt_run_command(
     return adt_cmd + ['---'] + backend_args
 
 
-def _grab_git_version_autopkgtest(tmp_dir):
+def _grab_git_version_autopkgtest(
+        tmp_dir,
+        git_url='git://anonscm.debian.org/autopkgtest/autopkgtest.git'):
     # Grab the git version of autopkgtest so that we can use the latest
     # features (i.e. reboot-prepare).
     # This is needed as 3.14+ is not in vivid.
-    # TODO: Remove this need by grabbing it from backports or universe.
-    git_url = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
+    # TODO: add support for a specific revision
     git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
     git_command = ['git', 'clone', git_url, git_trunk_path]
 
