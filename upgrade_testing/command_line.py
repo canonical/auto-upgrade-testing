@@ -153,7 +153,7 @@ def get_adt_run_command(
 
     """
 
-    if sys.environment['AUTOPKGTEST_GIT_REPO']:
+    if os.environ['AUTOPKGTEST_GIT_REPO']:
         git_edition_location = _grab_git_version_autopkgtest(
             testrun_files.testrun_tmp_dir
         )
