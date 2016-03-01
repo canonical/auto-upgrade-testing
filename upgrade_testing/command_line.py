@@ -153,9 +153,9 @@ def get_adt_run_command(
 
     """
 
-    if os.environ['AUTOPKGTEST_GIT_REPO']:
+    if 'AUTOPKGTEST_GIT_REPO' in os.environ:
         git_edition_location = _grab_git_version_autopkgtest(
-            testrun_files.testrun_tmp_dir
+            testrun_files.testrun_tmp_dir, os.environ['AUTOPKGTEST_GIT_REPO']
         )
 
         adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
