@@ -153,6 +153,7 @@ def get_adt_run_command(
 
     """
 
+    print('MAX is here!')
     print(os.environ)
     if 'AUTOPKGTEST_GIT_REPO' in os.environ:
         print('found var')
