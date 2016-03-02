@@ -152,18 +152,7 @@ def get_adt_run_command(
       results from the run.
 
     """
-
-    git_kwargs = {}
-    if 'AUTOPKGTEST_GIT_REPO' in os.environ:
-        git_kwargs['git_url']=os.environ['AUTOPKGTEST_GIT_REPO']
-    if 'AUTOPKGTEST_GIT_HASH' in os.environ:
-        git_kwargs['git_hash'] = os.environ['AUTOPKGTEST_GIT_HASH']
-    if git_kwargs:
-        git_edition_location = _grab_git_version_autopkgtest(
-            testrun_files.testrun_tmp_dir, **git_kwargs)
-        adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
-    else:
-        adt_run_exec = 'adt-run'
+    adt_run_exec = _get_adt_path(testrun_files.testrun_tmp_dir)
 
     # Default adt-run hardcoded adt command
     adt_cmd = [
@@ -209,26 +198,35 @@ def get_adt_run_command(
     return adt_cmd + ['---'] + backend_args
 
 
-def _grab_git_version_autopkgtest(
-        tmp_dir,
-        git_url='git://anonscm.debian.org/autopkgtest/autopkgtest.git',
-        git_hash=None):
+def _get_adt_path(tmp_dir):
     # Grab the git version of autopkgtest so that we can use the latest
     # features (i.e. reboot-prepare).
     # This is needed as 3.14+ is not in vivid.
-    # TODO: add support for a specific revision
-    git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-    git_command = ['git', 'clone', git_url, git_trunk_path]
-
-    run_command_with_logged_output(git_command)
-    if git_hash:
-        git_command = ['git',
-                       '--git-dir', os.path.join(git_trunk_path, '.git'),
-                       '--work-tree', git_trunk_path,
-                       'checkout', git_hash]
+    fetch = False
+    if 'AUTOPKGTEST_GIT_REPO' in os.environ:
+        git_url = os.environ['AUTOPKGTEST_GIT_REPO']
+        fetch = True
+    else:
+        git_url = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
+    if 'AUTOPKGTEST_GIT_HASH' in os.environ:
+        git_hash = os.environ['AUTOPKGTEST_GIT_HASH']
+        fetch = True
+    else:
+        git_hash = None
+    if fetch:
+        git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
+        git_command = ['git', 'clone', git_url, git_trunk_path]
         run_command_with_logged_output(git_command)
+        if git_hash:
+            git_command = ['git',
+                           '--git-dir', os.path.join(git_trunk_path, '.git'),
+                           '--work-tree', git_trunk_path,
+                           'checkout', git_hash]
+            run_command_with_logged_output(git_command)
+        return os.path.join(git_trunk_path, 'run-from-checkout')
 
-    return git_trunk_path
+    else:
+        return 'adt-run'
 
 
 def main():
