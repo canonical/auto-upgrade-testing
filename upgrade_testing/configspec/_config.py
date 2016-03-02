@@ -120,7 +120,7 @@ def _generate_script_list(scripts_or_path, script_location=None):
         if script_location is not None:
             abs_path = os.path.abspath(
                 os.path.join(
-                    script_location.replace('file://'),
+                    script_location.replace('file://', ''),
                     scripts_or_path
                 )
             )
