@@ -132,7 +132,6 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
     """
     # we can change 'test_source_retriever' so that it uses the testurn_files
     # and doesn't need to worry about cleanup.
-    print('getting adt run command')
     adt_run_command = get_adt_run_command(
         testsuite.provisioning,
         testrun_files,
@@ -154,18 +153,16 @@ def get_adt_run_command(
 
     """
 
-    print('MAX is here!')
-    print(os.environ)
+    git_kwargs = {}
     if 'AUTOPKGTEST_GIT_REPO' in os.environ:
-        print('found var')
+        git_kwargs['git_url']=os.environ['AUTOPKGTEST_GIT_REPO']
+    if 'AUTOPKGTEST_GIT_HASH' in os.environ:
+        git_kwargs['git_hash'] = os.environ['AUTOPKGTEST_GIT_HASH']
+    if git_kwargs:
         git_edition_location = _grab_git_version_autopkgtest(
-            testrun_files.testrun_tmp_dir,
-            git_url=os.environ['AUTOPKGTEST_GIT_REPO'],
-        )
-
+            testrun_files.testrun_tmp_dir, **git_kwargs)
         adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
     else:
-        print('did not')
         adt_run_exec = 'adt-run'
 
     # Default adt-run hardcoded adt command
@@ -214,15 +211,22 @@ def get_adt_run_command(
 
 def _grab_git_version_autopkgtest(
         tmp_dir,
-        git_url='git://anonscm.debian.org/autopkgtest/autopkgtest.git'):
+        git_url='git://anonscm.debian.org/autopkgtest/autopkgtest.git',
+        git_hash=None):
     # Grab the git version of autopkgtest so that we can use the latest
     # features (i.e. reboot-prepare).
     # This is needed as 3.14+ is not in vivid.
     # TODO: add support for a specific revision
     git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-    git_command = ['git', 'checkout', git_url, git_trunk_path]
+    git_command = ['git', 'clone', git_url, git_trunk_path]
 
     run_command_with_logged_output(git_command)
+    if git_hash:
+        git_command = ['git',
+                       '--git-dir', os.path.join(git_trunk_path, '.git'),
+                       '--work-tree', git_trunk_path,
+                       'checkout', git_hash]
+        run_command_with_logged_output(git_command)
 
     return git_trunk_path
 
@@ -269,9 +273,7 @@ def main():
         # Setup output dir
         output_dir = get_output_dir(args)
 
-        print('with time!')
         with prepare_test_environment(testsuite) as created_files:
-            print('executing adt')
             execute_adt_run(testsuite, created_files, output_dir)
 
         display_results(output_dir)
