@@ -62,7 +62,8 @@ function main() {
 
         exit_if_not_running_initial_system
 
-        STATUS=$(pre_tests)
+        pre_tests
+        STATUS=$?
         exit_with_log_if_nonzero $STATUS "ERROR: Something went during the prerun scripts."
 
         store_prereboot_details
@@ -86,7 +87,8 @@ function main() {
         exit_if_not_running_expected_post_system
 
         # No need to explicitly exit here as we're at the end.
-        STATUS=$(post_tests)
+        post_tests
+        STATUS=$?
     fi
 
     exit $STATUS
