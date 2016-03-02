@@ -115,7 +115,7 @@ def _generate_script_list(scripts_or_path, script_location=None):
         if script_location is None:
             raise ValueError('No script location supplied for scripts')
         # scripts is already a list of scripts.
-        return(scripts_or_path, script_location)
+        return (scripts_or_path, script_location)
     elif os.path.isdir(scripts_or_path):
         if script_location is not None:
             abs_path = os.path.abspath(
