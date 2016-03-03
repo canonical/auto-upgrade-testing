@@ -103,7 +103,7 @@ def _get_script_location_path(provision_details, provisionfile_path):
     return location
 
 
-def _generate_script_list(scripts_or_path, script_location=None):
+def _generate_script_list(scripts_or_path, script_source_path=None):
     """Return a tuple containing a list of script names and a location string.
 
     Source can either be a path that contains executable files or a list of
@@ -112,9 +112,12 @@ def _generate_script_list(scripts_or_path, script_location=None):
     """
 
     if isinstance(scripts_or_path, list):
-        return _get_list_of_scripts_locations(scripts_or_path, script_location)
+        return _get_list_of_scripts_locations(
+            scripts_or_path,
+            script_source_path
+        )
 
-    abs_path = _get_abs_script_location(script_location, scripts_or_path)
+    abs_path = _get_abs_script_location(scripts_or_path, script_source_path)
 
     if os.path.isdir(abs_path):
         return _get_list_of_scripts_in_directory(abs_path)
@@ -124,19 +127,19 @@ def _generate_script_list(scripts_or_path, script_location=None):
     )
 
 
-def _get_list_of_scripts_locations(scripts, location):
+def _get_list_of_scripts_locations(scripts, script_source_path):
     """Return a tuple containing lists of scripts and their location path.
 
-    :raises ValueError: If `location` is None.
+    :raises ValueError: If `script_source_path` is None.
     :raises ValueError: If a declared script is not found on the filesystem.
 
     :returns: tuple containing a list of script names and a string containing
       the location path.
 
     """
-    if location is None:
+    if script_source_path is None:
         raise ValueError('No script location supplied for scripts')
-    sane_script_location = location.replace('file://', '')
+    sane_script_location = script_source_path.replace('file://', '')
     # scripts is already a list of scripts.
     for f in scripts:
         if not os.path.isfile(os.path.join(sane_script_location, f)):
@@ -146,20 +149,20 @@ def _get_list_of_scripts_locations(scripts, location):
                     sane_script_location
                 )
             )
-    return (scripts, location)
+    return (scripts, script_source_path)
 
 
-def _get_abs_script_location(script_location, scripts):
+def _get_abs_script_location(script_path, script_source_path):
     """Return absolute path for script location."""
-    if script_location is not None:
+    if script_source_path is not None:
         return os.path.abspath(
             os.path.join(
-                script_location.replace('file://', ''),
-                scripts
+                script_source_path.replace('file://', ''),
+                script_path
             )
         )
     else:
-        return scripts
+        return script_path
 
 
 def _get_list_of_scripts_in_directory(abs_path):
