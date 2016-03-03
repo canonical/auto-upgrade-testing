@@ -1,4 +1,0 @@
-#!/bin/sh
-
-echo "NULL Test"
-exit 0
