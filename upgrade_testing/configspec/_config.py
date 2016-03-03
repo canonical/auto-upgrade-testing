@@ -112,25 +112,70 @@ def _generate_script_list(scripts_or_path, script_location=None):
     """
 
     if isinstance(scripts_or_path, list):
-        if script_location is None:
-            raise ValueError('No script location supplied for scripts')
-        # scripts is already a list of scripts.
-        return(scripts_or_path, script_location)
-    elif os.path.isdir(scripts_or_path):
-        if script_location is not None:
-            abs_path = os.path.abspath(
-                os.path.join(
-                    script_location.replace('file://'),
-                    scripts_or_path
-                )
-            )
-        else:
-            abs_path = scripts_or_path
-        return (_get_executable_files(abs_path), script_location)
+        return _get_list_of_scripts_locations(scripts_or_path, script_location)
+
+    abs_path = _get_abs_script_location(script_location, scripts_or_path)
+
+    if os.path.isdir(abs_path):
+        return _get_list_of_scripts_in_directory(abs_path)
 
     raise ValueError(
         'No scripts found. {} is neither a path or list of scripts'
     )
+
+
+def _get_list_of_scripts_locations(scripts, location):
+    """Return a tuple containing lists of scripts and their location path.
+
+    :raises ValueError: If `location` is None.
+    :raises ValueError: If a declared script is not found on the filesystem.
+
+    :returns: tuple containing a list of script names and a string containing
+      the location path.
+
+    """
+    if location is None:
+        raise ValueError('No script location supplied for scripts')
+    sane_script_location = location.replace('file://', '')
+    # scripts is already a list of scripts.
+    for f in scripts:
+        if not os.path.isfile(os.path.join(sane_script_location, f)):
+            raise ValueError(
+                'Supplied script "{}" was not found at: {}'.format(
+                    f,
+                    sane_script_location
+                )
+            )
+    return (scripts, location)
+
+
+def _get_abs_script_location(script_location, scripts):
+    """Return absolute path for script location."""
+    if script_location is not None:
+        return os.path.abspath(
+            os.path.join(
+                script_location.replace('file://', ''),
+                scripts
+            )
+        )
+    else:
+        return scripts
+
+
+def _get_list_of_scripts_in_directory(abs_path):
+    """Return tuple containing list of scripts and location path.
+
+    :raises ValueError: If no executable scripts can be found at the supplied
+      location.
+
+    """
+    script_file_list = _get_executable_files(abs_path)
+    if not script_file_list:
+        raise ValueError(
+            'No executatble scripts found at location: {}'.format(abs_path)
+        )
+    # Update the script_location path to suit.
+    return (script_file_list, 'file://{}'.format(abs_path))
 
 
 def _get_executable_files(abs_path):
