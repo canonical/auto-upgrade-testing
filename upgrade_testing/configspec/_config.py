@@ -114,19 +114,36 @@ def _generate_script_list(scripts_or_path, script_location=None):
     if isinstance(scripts_or_path, list):
         if script_location is None:
             raise ValueError('No script location supplied for scripts')
+        sane_script_location = script_location.replace('file://', '')
         # scripts is already a list of scripts.
-        return (scripts_or_path, script_location)
-    elif os.path.isdir(scripts_or_path):
-        if script_location is not None:
-            abs_path = os.path.abspath(
-                os.path.join(
-                    script_location.replace('file://', ''),
-                    scripts_or_path
+        for f in scripts_or_path:
+            if not os.path.isfile(os.path.join(sane_script_location, f)):
+                raise ValueError(
+                    'Supplied script "{}" was not found at: {}'.format(
+                        f,
+                        sane_script_location
+                    )
                 )
+        return (scripts_or_path, script_location)
+
+    if script_location is not None:
+        abs_path = os.path.abspath(
+            os.path.join(
+                script_location.replace('file://', ''),
+                scripts_or_path
             )
-        else:
-            abs_path = scripts_or_path
-        return (_get_executable_files(abs_path), script_location)
+        )
+    else:
+        abs_path = scripts_or_path
+
+    if os.path.isdir(abs_path):
+        script_file_list = _get_executable_files(abs_path)
+        if not script_file_list:
+            raise ValueError(
+                'No executatble scripts found at location: {}'.format(abs_path)
+            )
+        # Update the script_location path to suit.
+        return (script_file_list, 'file://{}'.format(abs_path))
 
     raise ValueError(
         'No scripts found. {} is neither a path or list of scripts'
