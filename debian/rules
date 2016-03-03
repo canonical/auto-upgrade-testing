@@ -4,5 +4,5 @@
 	dh $@ --with python3 --buildsystem=pybuild
 
 override_dh_auto_build:
-	# Helpful doc: http://pep8.readthedocs.org/en/latest/intro.html#error-codes
-	python3 -m flake8.run --ignore=W503 .
+	./.project-flake8.sh
+	dh_auto_build

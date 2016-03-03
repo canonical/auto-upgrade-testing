@@ -2,6 +2,19 @@
  Upgrade Testing
 =================
 
+Developers
+==========
+
+Testing + pep8
+--------------
+
+When making changes it is worth while checking them against the projects flake8
+checker (which has custom ignores).
+
+This can be achieved by running the script `.project-flake8.sh` found in the
+project root.
+This script is also run during package build.
+
 Testfile Spec
 =============
 
