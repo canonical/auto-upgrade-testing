@@ -138,6 +138,7 @@ class RenderBuildArgsTestCase(unittest.TestCase):
             len(build_args)
         )
 
+
 class QemuProvisionSpecificationTestCases(unittest.TestCase):
 
     def test_stores_passed_specification_details(self):
@@ -157,6 +158,6 @@ class QemuProvisionSpecificationTestCases(unittest.TestCase):
 
         self.assertEqual(qemu_spec.releases, spec['releases'])
         self.assertEqual(qemu_spec.arch, spec['arch'])
-        self.assertEqual(qemu_spec.image_name, spec['image_name'] )
+        self.assertEqual(qemu_spec.image_name, spec['image_name'])
         self.assertEqual(qemu_spec.build_args, ['/test/path'])
         self.assertEqual(qemu_spec.initial_state, 'release 1')
