@@ -62,18 +62,18 @@ class ProvisionSpecification:
         raise NotImplementedError()
 
     @staticmethod
-    def from_testspec(spec):
+    def from_testspec(spec, spec_path):
         backend_name = spec['provisioning']['backend']
         spec_type = get_specification_type(backend_name)
-        return spec_type(spec['provisioning'])
+        return spec_type(spec['provisioning'], spec_path)
 
     @staticmethod
-    def from_provisionspec(spec):
+    def from_provisionspec(spec, spec_path):
         # A provision spec is almost the same as a testdef provision spec
         # except it doesn't have the parent stanza.
         backend_name = spec['backend']
         spec_type = get_specification_type(backend_name)
-        return spec_type(spec)
+        return spec_type(spec, spec_path)
 
 
 def get_specification_type(spec_name):
@@ -90,11 +90,12 @@ def get_specification_type(spec_name):
 
 
 class LXCProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config):
+    def __init__(self, provision_config, provision_path):
         # Defaults to ubuntu
         self.distribution = provision_config.get('distribution', 'ubuntu')
         self.releases = provision_config['releases']
         self.arch = provision_config['arch']
+        self._provisionconfig_path = provision_path
 
         self.backend = backends.LXCBackend(
             self.initial_state,
@@ -144,7 +145,8 @@ class LXCProvisionSpecification(ProvisionSpecification):
 
 
 class TouchProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config):
+    def __init__(self, provision_config, provision_path):
+        self._provisionconfig_path = provision_path
         try:
             self.channel = provision_config['channel']
             self.revision = provision_config['revision']
@@ -248,7 +250,9 @@ class TouchProvisionSpecification(ProvisionSpecification):
 
 
 class QemuProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config):
+    def __init__(self, provision_config, provision_path):
+        self._provisionconfig_path = provision_path
+
         self.releases = provision_config['releases']
         self.arch = provision_config.get('arch', 'amd64')
         self.image_name = provision_config.get(
