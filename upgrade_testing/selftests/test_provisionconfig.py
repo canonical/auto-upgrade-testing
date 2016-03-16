@@ -24,7 +24,7 @@ from upgrade_testing.provisioning import _provisionconfig as _p
 
 class ReplacePlaceholdersTestCases(unittest.TestCase):
 
-    def test_returns_untouched_string(self):
+    def test_returns_untouched_string_when_no_tokens_involved(self):
         noplaceholder_string = 'This is a normal string, no placeholders'
         self.assertEqual(
             noplaceholder_string,
@@ -40,18 +40,17 @@ class ReplacePlaceholdersTestCases(unittest.TestCase):
             expected_string
         )
 
-    def test_replaces_simple_token_within_text(self):
-        base_string = '$FOO'
+    def test_replaces_simple_token_while_leaving_other_text_alone(self):
+        base_string = 'nottoken $FOO nottoken'
         expected_string = 'texthaschanged'
         _token_lookup = dict(FOO=lambda: expected_string)
         self.assertEqual(
             _p._replace_placeholders(base_string, _token_lookup),
-            expected_string
+            'nottoken {} nottoken'.format(expected_string)
         )
 
     def test_leaves_non_tokens_alone(self):
-        """FOO isn't a valid token as it's lacking a '$' and thus must be left
-        alone.
+        """FOO isn't a valid token it's lacking a '$' and must be left alone.
 
         """
         base_string = 'FOO'
@@ -61,15 +60,16 @@ class ReplacePlaceholdersTestCases(unittest.TestCase):
             base_string
         )
 
-    def test_replaces_multiple_tokens(self):
+    def test_replaces_multiple_tokens_within_a_string(self):
         base_string = '$FOO and $BAR'
+        expected_string = '123 and abc'
         _token_lookup = dict(FOO=lambda: '123', BAR=lambda: 'abc')
         self.assertEqual(
             _p._replace_placeholders(base_string, _token_lookup),
-            '123 and abc'
+            expected_string
         )
 
-    def test_leaves_unknown_token(self):
+    def test_does_not_replace_unknown_token(self):
         base_string = '$FOO and $BAR'
         _token_lookup = dict(FOO=lambda: '123')
         self.assertEqual(
@@ -86,11 +86,11 @@ class ReplacePlaceholdersTestCases(unittest.TestCase):
         _token_lookup = dict(
             FOO=lambda: 'foo',
             BAR=lambda: 'bar',
-            FOOBAR=lambda: 'foobar'
+            FOOBAR=lambda: 'baz'
         )
         self.assertEqual(
             _p._replace_placeholders(base_string, _token_lookup),
-            'foobar and foo and bar'
+            'baz and foo and bar'
         )
 
     def test_confirms_full_token_word(self):
