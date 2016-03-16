@@ -17,6 +17,7 @@
 #
 
 import logging
+import os
 import re
 import subprocess
 
@@ -258,7 +259,14 @@ class QemuProvisionSpecification(ProvisionSpecification):
         self.image_name = provision_config.get(
             'image_name', 'adt-{}-{}-cloud.img'.format(self.initial_state,
                                                        self.arch))
-        self.build_args = provision_config.get('build_args', [])
+        provision_config_directory = os.path.dirname(
+            os.path.abspath(provision_path)
+        )
+        self.build_args = _render_build_args(
+            provision_config.get('build_args', []),
+            provision_config_directory
+        )
+        logger.info('Using build args: {}'.format(self.build_args))
 
         self.backend = backends.QemuBackend(
             self.initial_state,
@@ -301,3 +309,43 @@ class QemuProvisionSpecification(ProvisionSpecification):
             dist=self.distribution,
             releases=self.releases
         )
+
+
+def _render_build_args(build_args, profile_path):
+    """Modify build args if required, returns a build args list.append
+
+    For instance replaces any tokens in the string with the relevant parts.
+
+    :param build_args: A list of strings.
+    :param profile_path: String containing the path of the profile file in use.
+    :returns: A list containing the build arg strings.
+
+    """
+    _token_lookup = dict(PROFILE_PATH=lambda: profile_path)
+
+    if not isinstance(build_args, list):
+        raise TypeError('build_args must be a list')
+    if not all(isinstance(s, str) for s in build_args):
+        raise ValueError('build_args must contain strings.')
+
+    new_args = []
+    for arg in build_args:
+        new_args.append(_replace_placeholders(arg, _token_lookup))
+    return new_args
+
+
+def _replace_placeholders(original_string, token_lookup):
+    token_strings = list(token_lookup.keys())
+    # Ensure we replace the longest tokens first so we don't confuse substrings
+    # (i.e. do $FOOBAR before $FOO otherwise we'll get $<changed>BAR)
+    token_strings.sort(reverse=True)
+
+    for token in token_strings:
+        result = re.sub(
+            '\${}'.format(token),
+            token_lookup[token](),
+            original_string
+        )
+        original_string = result
+
+    return original_string
