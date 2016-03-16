@@ -22,7 +22,7 @@ import subprocess
 
 from upgrade_testing.provisioning.backends._base import ProviderBackend
 
-CACHE_DIR='/var/cache/auto-upgrade-testing'
+CACHE_DIR = '/var/cache/auto-upgrade-testing'
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class QemuBackend(ProviderBackend):
 
     @property
     def name(self):
-        return 'qemu' 
+        return 'qemu'
 
     def __repr__(self):
         return '{classname}(release={release})'.format(
