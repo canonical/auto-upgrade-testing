@@ -5,6 +5,7 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Build-Depends: debhelper (>= 9),
                dh-python,
                python3-all-dev (>= 3.4),
+               python3-flake8,
                python3-lxc,
                python3-setuptools,
                python3-yaml,
