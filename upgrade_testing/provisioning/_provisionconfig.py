@@ -52,11 +52,11 @@ class ProvisionSpecification:
 
     def backend_available(self):
         """Return True if the provisioning backend is available."""
-        raise NotImplementedError()
+        return self.backend.available()
 
     def create(self, adt_base_path):
         """Provision the stored backend."""
-        raise NotImplementedError()
+        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
@@ -118,19 +118,6 @@ class LXCProvisionSpecification(ProvisionSpecification):
     def final_state(self):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
-
-    @property
-    def backend_name(self):
-        """Return the name of the provision backend."""
-        return self.backend.name
-
-    def backend_available(self):
-        """Return True if the provisioning backend is available."""
-        return self.backend.available()
-
-    def create(self, adt_base_path):
-        """Provision the stored backend."""
-        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
@@ -224,19 +211,6 @@ class TouchProvisionSpecification(ProvisionSpecification):
         except KeyError:
             raise RuntimeError('Unable to determine the device name.')
 
-    @property
-    def backend_name(self):
-        """Return the name of the provision backend."""
-        return self.backend.name
-
-    def backend_available(self):
-        """Return True if the provisioning backend is available."""
-        return self.backend.available()
-
-    def create(self, adt_base_path):
-        """Provision the stored backend."""
-        return self.backend.create(adt_base_path)
-
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         return self.backend.get_adt_run_args(**kwargs)
@@ -289,14 +263,6 @@ class QemuProvisionSpecification(ProvisionSpecification):
     def final_state(self):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
-
-    def backend_available(self):
-        """Return True if the provisioning backend is available."""
-        return self.backend.available()
-
-    def create(self, adt_base_path):
-        """Provision the stored backend."""
-        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
