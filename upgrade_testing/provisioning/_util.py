@@ -22,7 +22,7 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
-def run_command_with_logged_output(command):
+def run_command_with_logged_output(command, shell=False):
     """Run provided command while outputting stdout & stderr in 'real time'.
 
     :returns: Returncode of command that was run.
@@ -34,7 +34,8 @@ def run_command_with_logged_output(command):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             bufsize=1,
-            universal_newlines=True
+            universal_newlines=True,
+            shell=shell
     ) as proc:
         for line in proc.stdout:
             logger.info(line.strip('\n'))
