@@ -18,6 +18,7 @@
 
 import logging
 import lxc
+import os
 
 from upgrade_testing.provisioning._util import run_command_with_logged_output
 from upgrade_testing.provisioning.backends._base import ProviderBackend
@@ -50,13 +51,13 @@ class LXCBackend(ProviderBackend):
     def _get_container_name(self):
         return 'adt-{}-{}'.format(self.release, self.arch)
 
-    def create(self):
+    def create(self, adt_base_path):
         """Create an lxc container."""
 
         logger.info('Creating lxc container for run.')
 
         cmd = [
-            'adt-build-lxc',
+            os.path.join(adt_base_path, 'tools', 'adt-build-lxc'),
             self.distro,
             self.release,
             self.arch,

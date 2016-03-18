@@ -54,7 +54,7 @@ class ProvisionSpecification:
         """Return True if the provisioning backend is available."""
         raise NotImplementedError()
 
-    def create(self):
+    def create(self, adt_base_path):
         """Provision the stored backend."""
         raise NotImplementedError()
 
@@ -128,9 +128,9 @@ class LXCProvisionSpecification(ProvisionSpecification):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def create(self):
+    def create(self, adt_base_path):
         """Provision the stored backend."""
-        return self.backend.create()
+        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
@@ -233,9 +233,9 @@ class TouchProvisionSpecification(ProvisionSpecification):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def create(self):
+    def create(self, adt_base_path):
         """Provision the stored backend."""
-        return self.backend.create()
+        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
@@ -294,9 +294,9 @@ class QemuProvisionSpecification(ProvisionSpecification):
         """Return True if the provisioning backend is available."""
         return self.backend.available()
 
-    def create(self):
+    def create(self, adt_base_path):
         """Provision the stored backend."""
-        return self.backend.create()
+        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
