@@ -18,8 +18,8 @@
 
 import logging
 import os
-import subprocess
 
+from upgrade_testing.provisioning._util import run_command_with_logged_output
 from upgrade_testing.provisioning.backends._base import ProviderBackend
 
 CACHE_DIR = '/var/cache/auto-upgrade-testing'
@@ -51,21 +51,21 @@ class QemuBackend(ProviderBackend):
         logger.info('Checking for {}'.format(image_name))
         return image_name in os.listdir(CACHE_DIR)
 
-    def create(self):
+    def create(self, adt_base_path):
         """Create a qemu image."""
 
         logger.info('Creating qemu image for run.')
-        cmd = 'adt-buildvm-ubuntu-cloud -a {} -r {} -o {} {}'.format(
-            self.arch, self.release, CACHE_DIR, ' '.join(self.build_args),
+        cmd = '{builder_cmd} -a {arch} -r {release} -o {output} {args}'.format(
+            builder_cmd=os.path.join(
+                adt_base_path, 'tools', 'adt-buildvm-ubuntu-cloud'
+            ),
+            arch=self.arch,
+            release=self.release,
+            output=CACHE_DIR,
+            args=' '.join(self.build_args),
         )
-        print(cmd)
-        # TODO: Provide further checking here.
-        with subprocess.Popen(
-                cmd, shell=True, stdout=subprocess.PIPE,
-                bufsize=1, universal_newlines=True
-        ) as p:
-            for line in p.stdout:
-                logger.info(line.strip('\n'))
+        run_command_with_logged_output(cmd, shell=True)
+
         initial_image_name = 'adt-{}-{}-cloud.img'.format(self.release,
                                                           self.arch)
         initial_image_path = os.path.join(CACHE_DIR, initial_image_name)

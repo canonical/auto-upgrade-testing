@@ -27,6 +27,7 @@ from textwrap import dedent
 
 from upgrade_testing.configspec import test_source_retriever
 from upgrade_testing.preparation._testbed import get_testbed_storage_location
+from upgrade_testing.provisioning import run_command_with_logged_output
 from upgrade_testing.configspec import get_file_data_location
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 # afterwards.
 TestrunTempFiles = namedtuple(
     'TestrunTempFiles', [
+        'adt_base_path',
         'run_config_file',
         'testrun_tmp_dir',
         'unbuilt_dir',
@@ -72,6 +74,7 @@ def prepare_test_environment(testsuite):
         _copy_script_files(testsuite.post_upgrade_tests.location, post_path)
 
         yield TestrunTempFiles(
+            adt_base_path=_grab_git_version_autopkgtest(temp_dir),
             run_config_file=run_config_path,
             # Should we create a dir so that it won't interfer?
             unbuilt_dir=temp_dir,
@@ -160,3 +163,17 @@ def _create_autopkg_details(temp_dir):
     open(dummy_control, 'a').close()
 
     return dir_tree
+
+
+def _grab_git_version_autopkgtest(tmp_dir):
+    # Grab the git version of autopkgtest so that we can use the latest
+    # features (i.e. reboot-prepare).
+    # This is needed as 3.14+ is not in vivid.
+    # TODO: Remove this need by grabbing it from backports or universe.
+    git_url = 'git://anonscm.debian.org/cgit/autopkgtest/autopkgtest.git'
+    git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
+    git_command = ['git', 'clone', git_url, git_trunk_path]
+
+    run_command_with_logged_output(git_command)
+
+    return git_trunk_path

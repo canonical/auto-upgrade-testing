@@ -22,7 +22,6 @@ from upgrade_testing.preparation import (
     get_testbed_storage_location,
     prepare_test_environment,
 )
-from upgrade_testing.provisioning import run_command_with_logged_output
 
 import datetime
 import logging
@@ -153,12 +152,10 @@ def get_adt_run_command(
 
     """
 
-    git_edition_location = _grab_git_version_autopkgtest(
-        testrun_files.testrun_tmp_dir
+    adt_run_exec = os.path.join(
+        testrun_files.adt_base_path,
+        'run-from-checkout'
     )
-
-    adt_run_exec = os.path.join(git_edition_location, 'run-from-checkout')
-    # adt_run_exec = 'adt-run'
 
     # Default adt-run hardcoded adt command
     adt_cmd = [
@@ -204,20 +201,6 @@ def get_adt_run_command(
     return adt_cmd + ['---'] + backend_args
 
 
-def _grab_git_version_autopkgtest(tmp_dir):
-    # Grab the git version of autopkgtest so that we can use the latest
-    # features (i.e. reboot-prepare).
-    # This is needed as 3.14+ is not in vivid.
-    # TODO: Remove this need by grabbing it from backports or universe.
-    git_url = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
-    git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-    git_command = ['git', 'clone', git_url, git_trunk_path]
-
-    run_command_with_logged_output(git_command)
-
-    return git_trunk_path
-
-
 def main():
     setup_logging()
     args = parse_args()
@@ -243,24 +226,27 @@ def main():
     # if not either error or create it (depending on args.)
     for testsuite in test_def_details:
         # TODO: This could be improved to look something like:
-        # testuite.provisioning.prepare(provision=create) # Note this could
-        # raise an exception.
-        if not testsuite.provisioning.backend_available():
-            if args.provision:
-                logger.debug('Provising backend.')
-                testsuite.provisioning.create()
-            else:
-                logger.error(
-                    'No available backend for test: {}'.format(testsuite.name)
-                )
-                continue
-        else:
-            logger.info('Backend is available.')
-
-        # Setup output dir
-        output_dir = get_output_dir(args)
+        # testuite.provisioning.prepare(provision=create)
+        # Note this could raise an exception.
 
         with prepare_test_environment(testsuite) as created_files:
+            if not testsuite.provisioning.backend_available():
+                if args.provision:
+                    logger.debug('Provising backend.')
+                    testsuite.provisioning.create(created_files.adt_base_path)
+                else:
+                    logger.error(
+                        'No available backend for test: {}'.format(
+                            testsuite.name
+                        )
+                    )
+                    continue
+            else:
+                logger.info('Backend is available.')
+
+            # Setup output dir
+            output_dir = get_output_dir(args)
+
             execute_adt_run(testsuite, created_files, output_dir)
 
         display_results(output_dir)
