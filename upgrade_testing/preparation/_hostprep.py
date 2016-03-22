@@ -170,7 +170,7 @@ def _grab_git_version_autopkgtest(tmp_dir):
     # features (i.e. reboot-prepare).
     # This is needed as 3.14+ is not in vivid.
     # TODO: Remove this need by grabbing it from backports or universe.
-    git_url = 'git://anonscm.debian.org/cgit/autopkgtest/autopkgtest.git'
+    git_url = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
     git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
     git_command = ['git', 'clone', git_url, git_trunk_path]
 
