@@ -209,6 +209,8 @@ def _get_adt_path(tmp_dir):
     if git_url or git_hash:
         git_url = git_url or DEFAULT_GIT_URL
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
+        print(os.listdir(tmp_dir))
+        print(os.listdir(git_trunk_path))
         git_command = ['git', 'clone', git_url, git_trunk_path]
         retval = run_command_with_logged_output(git_command)
         if retval != 0:
