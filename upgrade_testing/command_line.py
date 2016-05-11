@@ -206,15 +206,11 @@ def _get_adt_path(tmp_dir):
     # This is needed as 3.14+ is not in vivid.
     git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
-    print(git_url)
     if git_url or git_hash:
-        print(git_url)
         git_url = git_url or DEFAULT_GIT_URL
-        print(git_url)
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
         git_command = ['git', 'clone', git_url, git_trunk_path]
         retval = run_command_with_logged_output(git_command)
-        print(retval)
         if retval != 0:
             raise ChildProcessError('{} exited with status {}'.format(
                 git_command, retval))
