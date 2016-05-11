@@ -33,6 +33,7 @@ import yaml
 
 from argparse import ArgumentParser
 
+from upgrade_testing.provisioning._util import run_command_with_logged_output
 
 DEFAULT_GIT_URL = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
 
@@ -205,16 +206,6 @@ def _get_adt_path(tmp_dir):
     # This is needed as 3.14+ is not in vivid.
     git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
-    if 'AUTOPKGTEST_GIT_REPO' in os.environ:
-        git_url = os.environ['AUTOPKGTEST_GIT_REPO']
-        fetch = True
-    else:
-        git_url = DEFAULT_GIT_URL
-    if 'AUTOPKGTEST_GIT_HASH' in os.environ:
-        git_hash = os.environ['AUTOPKGTEST_GIT_HASH']
-        fetch = True
-    else:
-        git_hash = None
     if git_url or git_hash:
         git_url = git_url or DEFAULT_GIT_URL
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
