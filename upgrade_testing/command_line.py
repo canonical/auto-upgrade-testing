@@ -209,7 +209,7 @@ def _get_adt_path(tmp_dir):
         git_url = os.environ['AUTOPKGTEST_GIT_REPO']
         fetch = True
     else:
-        git_url = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
+        git_url = DEFAULT_GIT_URL
     if 'AUTOPKGTEST_GIT_HASH' in os.environ:
         git_hash = os.environ['AUTOPKGTEST_GIT_HASH']
         fetch = True
