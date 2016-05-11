@@ -215,11 +215,11 @@ def _get_adt_path(tmp_dir):
             raise ChildProcessError('{} exited with status {}'.format(
                 git_command, retval))
         if git_hash:
-            git_command = ['git',
+            git_hash_command = ['git',
                            '--git-dir', os.path.join(git_trunk_path, '.git'),
                            '--work-tree', git_trunk_path,
                            'checkout', git_hash]
-            run_command_with_logged_output(git_command)
+            run_command_with_logged_output(git_hash_command)
         return os.path.join(git_trunk_path, 'run-from-checkout')
 
     else:
