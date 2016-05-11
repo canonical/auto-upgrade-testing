@@ -214,6 +214,7 @@ def _get_adt_path(tmp_dir):
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
         git_command = ['git', 'clone', git_url, git_trunk_path]
         retval = run_command_with_logged_output(git_command)
+        print(retval)
         if retval != 0:
             raise ChildProcessError('{} exited with status {}'.format(
                 git_command, retval))
