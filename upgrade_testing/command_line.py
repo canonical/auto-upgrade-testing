@@ -213,7 +213,10 @@ def _get_adt_path(tmp_dir):
         print(git_url)
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
         git_command = ['git', 'clone', git_url, git_trunk_path]
-        run_command_with_logged_output(git_command)
+        retval = run_command_with_logged_output(git_command)
+        if retval != 0:
+            raise ChildProcessError('{} exited with status {}'.format(
+                git_command, retval))
         if git_hash:
             git_command = ['git',
                            '--git-dir', os.path.join(git_trunk_path, '.git'),
