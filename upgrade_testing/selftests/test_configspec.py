@@ -16,28 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import logging
-import subprocess
+import unittest
 
-logger = logging.getLogger(__name__)
+from upgrade_testing.configspec import _config as _c
 
 
-def run_command_with_logged_output(command, shell=False):
-    """Run provided command while outputting stdout & stderr in 'real time'.
+class HelperMethodTestCases(unittest.TestCase):
 
-    :returns: Returncode of command that was run.
+    def test_load_configdef_raises_ValueError_on_non_yaml_filename(self):
+        self.assertRaises(ValueError, _c._load_configdef, 'test.txt')
 
-    """
-    logger.debug('Running command: {}'.format(command))
-    with subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            bufsize=1,
-            universal_newlines=True,
-            shell=shell
-    ) as proc:
-        for line in proc.stdout:
-            logger.info(line.strip('\n'))
-        proc.wait()
-        return proc.returncode
+    def test_read_yaml_config_raises_on_nonexistant_file(self):
+        self.assertRaises(FileNotFoundError, _c._read_yaml_config, 'test.txt')

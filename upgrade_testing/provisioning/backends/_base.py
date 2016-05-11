@@ -30,9 +30,11 @@ class ProviderBackend:
         required settings."""
         raise NotImplementedError()
 
-    def create(self):
+    def create(self, adt_base_path):
         """Creates an instance of this backend adhering to the provided args.
 
+        :param adt_base_path: string containing the base path to the version of
+          adt to use.
         :raises ValueError: if an instance already exists that matches these
           requirements.
 

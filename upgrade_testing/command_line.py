@@ -22,7 +22,6 @@ from upgrade_testing.preparation import (
     get_testbed_storage_location,
     prepare_test_environment,
 )
-from upgrade_testing.provisioning import run_command_with_logged_output
 
 import datetime
 import logging
@@ -258,24 +257,27 @@ def main():
     # if not either error or create it (depending on args.)
     for testsuite in test_def_details:
         # TODO: This could be improved to look something like:
-        # testuite.provisioning.prepare(provision=create) # Note this could
-        # raise an exception.
-        if not testsuite.provisioning.backend_available():
-            if args.provision:
-                logger.debug('Provising backend.')
-                testsuite.provisioning.create()
-            else:
-                logger.error(
-                    'No available backend for test: {}'.format(testsuite.name)
-                )
-                continue
-        else:
-            logger.info('Backend is available.')
-
-        # Setup output dir
-        output_dir = get_output_dir(args)
+        # testuite.provisioning.prepare(provision=create)
+        # Note this could raise an exception.
 
         with prepare_test_environment(testsuite) as created_files:
+            if not testsuite.provisioning.backend_available():
+                if args.provision:
+                    logger.debug('Provising backend.')
+                    testsuite.provisioning.create(created_files.adt_base_path)
+                else:
+                    logger.error(
+                        'No available backend for test: {}'.format(
+                            testsuite.name
+                        )
+                    )
+                    continue
+            else:
+                logger.info('Backend is available.')
+
+            # Setup output dir
+            output_dir = get_output_dir(args)
+
             execute_adt_run(testsuite, created_files, output_dir)
 
         display_results(output_dir)

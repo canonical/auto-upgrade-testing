@@ -50,7 +50,10 @@ class TestSpecification:
     def _reader(self, details):
         self.name = details['testname']
 
-        script_location = details.get('script_location', None)
+        script_location = _get_script_location_path(
+            details,
+            self.provisioning._provisionconfig_path
+        )
 
         self.pre_upgrade_scripts = ScriptStore(
             *_generate_script_list(
@@ -80,7 +83,27 @@ class TestSpecification:
         )
 
 
-def _generate_script_list(scripts_or_path, script_location=None):
+def _get_script_location_path(provision_details, provisionfile_path):
+    """Return the full path for a script location."""
+    # If script_location starts with ./ or ../ then we need to get the abs path
+    # of the provision file and append it.
+    location = provision_details.get('script_location', None)
+    if location is None:
+        return location
+    if location.startswith('file://.'):
+        provisionfile_dir = os.path.dirname(provisionfile_path)
+        full_path = os.path.abspath(
+            os.path.join(
+                provisionfile_dir,
+                location.replace('file://', '')
+            )
+        )
+        return 'file://{}'.format(full_path)
+    # Seems location is a full abs path already.
+    return location
+
+
+def _generate_script_list(scripts_or_path, script_source_path=None):
     """Return a tuple containing a list of script names and a location string.
 
     Source can either be a path that contains executable files or a list of
@@ -89,23 +112,73 @@ def _generate_script_list(scripts_or_path, script_location=None):
     """
 
     if isinstance(scripts_or_path, list):
-        # Can we default script_location to './'?
-        if script_location is None:
-            raise ValueError('No script location supplied for scripts')
-        # Already list of scripts, return it.
-        return (scripts_or_path, script_location)
-    elif os.path.isdir(scripts_or_path):
-        if script_location is not None:
-            logger.warning(
-                'script_location ignored as scripts provided is a path'
-            )
-        abs_path = os.path.abspath(scripts_or_path)
-        protocol_path = 'file://{}'.format(abs_path)
-        return (_get_executable_files(abs_path), protocol_path)
+        return _get_list_of_scripts_locations(
+            scripts_or_path,
+            script_source_path
+        )
+
+    abs_path = _get_abs_script_location(scripts_or_path, script_source_path)
+
+    if os.path.isdir(abs_path):
+        return _get_list_of_scripts_in_directory(abs_path)
 
     raise ValueError(
         'No scripts found. {} is neither a path or list of scripts'
     )
+
+
+def _get_list_of_scripts_locations(scripts, script_source_path):
+    """Return a tuple containing lists of scripts and their location path.
+
+    :raises ValueError: If `script_source_path` is None.
+    :raises ValueError: If a declared script is not found on the filesystem.
+
+    :returns: tuple containing a list of script names and a string containing
+      the location path.
+
+    """
+    if script_source_path is None:
+        raise ValueError('No script location supplied for scripts')
+    sane_script_location = script_source_path.replace('file://', '')
+    # scripts is already a list of scripts.
+    for f in scripts:
+        if not os.path.isfile(os.path.join(sane_script_location, f)):
+            raise ValueError(
+                'Supplied script "{}" was not found at: {}'.format(
+                    f,
+                    sane_script_location
+                )
+            )
+    return (scripts, script_source_path)
+
+
+def _get_abs_script_location(script_path, script_source_path):
+    """Return absolute path for script location."""
+    if script_source_path is not None:
+        return os.path.abspath(
+            os.path.join(
+                script_source_path.replace('file://', ''),
+                script_path
+            )
+        )
+    else:
+        return script_path
+
+
+def _get_list_of_scripts_in_directory(abs_path):
+    """Return tuple containing list of scripts and location path.
+
+    :raises ValueError: If no executable scripts can be found at the supplied
+      location.
+
+    """
+    script_file_list = _get_executable_files(abs_path)
+    if not script_file_list:
+        raise ValueError(
+            'No executatble scripts found at location: {}'.format(abs_path)
+        )
+    # Update the script_location path to suit.
+    return (script_file_list, 'file://{}'.format(abs_path))
 
 
 def _get_executable_files(abs_path):
@@ -127,17 +200,21 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     :raises KeyError: if there is any invalid or unknown config details.
 
     """
-    testdef = _load_testdef(testdef_filepath)
+    testdef = _load_configdef(testdef_filepath)
 
     specs = []
     for test in testdef:
         if provisiondef_filepath is None:
-            provision_details = ProvisionSpecification.from_testspec(test)
+            provision_details = ProvisionSpecification.from_testspec(
+                test,
+                testdef_filepath
+            )
         else:
             # Perhaps we want to be able to pass args to the commandline
-            # instead of writiing a file? We would always fudge that and
+            # instead of writing a file? We would always fudge that and
             # write to a file-like object and use that instead.
             provision_details = ProvisionSpecification.from_provisionspec(
+                _load_configdef(provisiondef_filepath),
                 provisiondef_filepath
             )
 
@@ -145,7 +222,7 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     return specs
 
 
-def _load_testdef(testdef_filepath):
+def _load_configdef(testdef_filepath):
     # Need a better way to confirm this.
     if testdef_filepath.endswith('.yaml'):
         return _read_yaml_config(testdef_filepath)

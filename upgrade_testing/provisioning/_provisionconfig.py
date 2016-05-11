@@ -17,6 +17,7 @@
 #
 
 import logging
+import os
 import re
 import subprocess
 
@@ -51,29 +52,29 @@ class ProvisionSpecification:
 
     def backend_available(self):
         """Return True if the provisioning backend is available."""
-        raise NotImplementedError()
+        return self.backend.available()
 
-    def create(self):
+    def create(self, adt_base_path):
         """Provision the stored backend."""
-        raise NotImplementedError()
+        return self.backend.create(adt_base_path)
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         raise NotImplementedError()
 
     @staticmethod
-    def from_testspec(spec):
+    def from_testspec(spec, spec_path):
         backend_name = spec['provisioning']['backend']
         spec_type = get_specification_type(backend_name)
-        return spec_type(spec['provisioning'])
+        return spec_type(spec['provisioning'], spec_path)
 
     @staticmethod
-    def from_provisionspec(spec):
+    def from_provisionspec(spec, spec_path):
         # A provision spec is almost the same as a testdef provision spec
         # except it doesn't have the parent stanza.
         backend_name = spec['backend']
         spec_type = get_specification_type(backend_name)
-        return spec_type(spec)
+        return spec_type(spec, spec_path)
 
 
 def get_specification_type(spec_name):
@@ -90,11 +91,12 @@ def get_specification_type(spec_name):
 
 
 class LXCProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config):
+    def __init__(self, provision_config, provision_path):
         # Defaults to ubuntu
         self.distribution = provision_config.get('distribution', 'ubuntu')
         self.releases = provision_config['releases']
         self.arch = provision_config['arch']
+        self._provisionconfig_path = provision_path
 
         self.backend = backends.LXCBackend(
             self.initial_state,
@@ -117,19 +119,6 @@ class LXCProvisionSpecification(ProvisionSpecification):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
 
-    @property
-    def backend_name(self):
-        """Return the name of the provision backend."""
-        return self.backend.name
-
-    def backend_available(self):
-        """Return True if the provisioning backend is available."""
-        return self.backend.available()
-
-    def create(self):
-        """Provision the stored backend."""
-        return self.backend.create()
-
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         return self.backend.get_adt_run_args(**kwargs)
@@ -144,7 +133,8 @@ class LXCProvisionSpecification(ProvisionSpecification):
 
 
 class TouchProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config):
+    def __init__(self, provision_config, provision_path):
+        self._provisionconfig_path = provision_path
         try:
             self.channel = provision_config['channel']
             self.revision = provision_config['revision']
@@ -221,19 +211,6 @@ class TouchProvisionSpecification(ProvisionSpecification):
         except KeyError:
             raise RuntimeError('Unable to determine the device name.')
 
-    @property
-    def backend_name(self):
-        """Return the name of the provision backend."""
-        return self.backend.name
-
-    def backend_available(self):
-        """Return True if the provisioning backend is available."""
-        return self.backend.available()
-
-    def create(self):
-        """Provision the stored backend."""
-        return self.backend.create()
-
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         return self.backend.get_adt_run_args(**kwargs)
@@ -248,13 +225,22 @@ class TouchProvisionSpecification(ProvisionSpecification):
 
 
 class QemuProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config):
+    def __init__(self, provision_config, provision_path):
+        self._provisionconfig_path = provision_path
+
         self.releases = provision_config['releases']
         self.arch = provision_config.get('arch', 'amd64')
         self.image_name = provision_config.get(
             'image_name', 'adt-{}-{}-cloud.img'.format(self.initial_state,
                                                        self.arch))
-        self.build_args = provision_config.get('build_args', [])
+        provision_config_directory = os.path.dirname(
+            os.path.abspath(provision_path)
+        )
+        self.build_args = _render_build_args(
+            provision_config.get('build_args', []),
+            provision_config_directory
+        )
+        logger.info('Using build args: {}'.format(self.build_args))
 
         self.backend = backends.QemuBackend(
             self.initial_state,
@@ -278,14 +264,6 @@ class QemuProvisionSpecification(ProvisionSpecification):
         """Return the string indicating the required final system state."""
         return self.releases[-1]
 
-    def backend_available(self):
-        """Return True if the provisioning backend is available."""
-        return self.backend.available()
-
-    def create(self):
-        """Provision the stored backend."""
-        return self.backend.create()
-
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         return self.backend.get_adt_run_args(**kwargs)
@@ -297,3 +275,43 @@ class QemuProvisionSpecification(ProvisionSpecification):
             dist=self.distribution,
             releases=self.releases
         )
+
+
+def _render_build_args(build_args, profile_path):
+    """Modify build args if required, returns a build args list.append
+
+    For instance replaces any tokens in the string with the relevant parts.
+
+    :param build_args: A list of strings.
+    :param profile_path: String containing the path of the profile file in use.
+    :returns: A list containing the build arg strings.
+
+    """
+    _token_lookup = dict(PROFILE_PATH=lambda: profile_path)
+
+    if not isinstance(build_args, list):
+        raise TypeError('build_args must be a list')
+    if not all(isinstance(s, str) for s in build_args):
+        raise ValueError('build_args must contain strings.')
+
+    new_args = []
+    for arg in build_args:
+        new_args.append(_replace_placeholders(arg, _token_lookup))
+    return new_args
+
+
+def _replace_placeholders(original_string, token_lookup):
+    token_strings = list(token_lookup.keys())
+    # Ensure we replace the longest tokens first so we don't confuse substrings
+    # (i.e. do $FOOBAR before $FOO otherwise we'll get $<changed>BAR)
+    token_strings.sort(reverse=True)
+
+    for token in token_strings:
+        result = re.sub(
+            '\${}'.format(token),
+            token_lookup[token](),
+            original_string
+        )
+        original_string = result
+
+    return original_string

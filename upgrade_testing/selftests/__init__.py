@@ -15,29 +15,3 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-import logging
-import subprocess
-
-logger = logging.getLogger(__name__)
-
-
-def run_command_with_logged_output(command, shell=False):
-    """Run provided command while outputting stdout & stderr in 'real time'.
-
-    :returns: Returncode of command that was run.
-
-    """
-    logger.debug('Running command: {}'.format(command))
-    with subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            bufsize=1,
-            universal_newlines=True,
-            shell=shell
-    ) as proc:
-        for line in proc.stdout:
-            logger.info(line.strip('\n'))
-        proc.wait()
-        return proc.returncode

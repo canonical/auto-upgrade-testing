@@ -68,7 +68,7 @@ class TouchBackend(ProviderBackend):
             return False
         return True
 
-    def create(self):
+    def create(self, adt_base_path):
         """Ensures that the testbed is flashed and ready to use.
 
         This includes:
@@ -76,6 +76,9 @@ class TouchBackend(ProviderBackend):
           - Altering the device so that it is read/writeable.
             (This is a requirement for being able to test on it. without using
             the users directory or tmp. Hmm.)
+
+        adt_base_path is ignored here as we make use of ubuntu-flash-tool to do
+        the flashing.
 
         """
 
