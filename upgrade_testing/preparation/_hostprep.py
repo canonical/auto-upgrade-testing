@@ -75,8 +75,11 @@ def prepare_test_environment(testsuite):
         post_path = os.path.join(temp_dir, 'post_scripts')
         _copy_script_files(testsuite.post_upgrade_tests.location, post_path)
 
+        adt_base_path, adt_cmd=_get_adt_path(temp_dir),
+
         yield TestrunTempFiles(
-            adt_base_path, adt_cmd=_get_adt_path(temp_dir),
+            adt_base_path=adt_base_path,
+            adt_cmd=_adt_cmd,
             run_config_file=run_config_path,
             # Should we create a dir so that it won't interfer?
             unbuilt_dir=temp_dir,
