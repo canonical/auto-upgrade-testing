@@ -173,16 +173,11 @@ def _create_autopkg_details(temp_dir):
 
 
 def _get_adt_path(tmp_dir):
-    # Grab the git version of autopkgtest so that we can use the latest
-    # features (i.e. reboot-prepare).
-    # This is needed as 3.14+ is not in vivid.
+    # Check if we need to get a git version of autopkgtest
+    # (If environment variables are set or a local version can't be found)
     git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
-    print(os.environ)
-    logger.info(os.environ)
-    logger.info(os.environ.get('AUTOPKGTEST_GIT_REPO'))
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
     local_adt = _get_local_adt()
-    logger.info(git_url)
     if git_url or git_hash or local_adt is None:
         logger.info('Fetching autopkgtest from git url: %s', git_url)
         git_url = git_url or DEFAULT_GIT_URL
