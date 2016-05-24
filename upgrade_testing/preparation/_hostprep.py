@@ -180,7 +180,7 @@ def _get_adt_path(tmp_dir):
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
     local_adt = _get_local_adt()
     if git_url or git_hash or local_adt is None:
-        logger.info('Fetching git autopkgtest')
+        logger.info('Fetching autopkgtest from git url: %s', git_url)
         git_url = git_url or DEFAULT_GIT_URL
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
         git_command = ['git', 'clone', git_url, git_trunk_path]
