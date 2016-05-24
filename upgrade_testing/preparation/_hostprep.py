@@ -180,6 +180,7 @@ def _get_adt_path(tmp_dir):
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
     local_adt = _get_local_adt()
     if git_url or git_hash or local_adt is None:
+        logger.info('Fetching git autopkgtest')
         git_url = git_url or DEFAULT_GIT_URL
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
         git_command = ['git', 'clone', git_url, git_trunk_path]
@@ -188,6 +189,7 @@ def _get_adt_path(tmp_dir):
             raise ChildProcessError('{} exited with status {}'.format(
                 git_command, retval))
         if git_hash:
+            logger.info('Checking out specific git hash: %s', git_hash)
             git_hash_command = ['git',
                            '--git-dir', os.path.join(git_trunk_path, '.git'),
                            '--work-tree', git_trunk_path,
@@ -196,6 +198,8 @@ def _get_adt_path(tmp_dir):
         adt_path = git_trunk_path
         adt_cmd = 'run-from-checkout'
     else:
+        logger.info('Using installed autopkgtest:')
+        run_command_with_logged_output(['dpkg-query', '-W', 'autopkgtest'])
         adt_path, adt_cmd = local_adt
     return (adt_path, os.path.join(adt_path, adt_cmd))
 
