@@ -195,10 +195,7 @@ def _get_adt_path(tmp_dir):
         adt_cmd = 'run-from-checkout'
     else:
         adt_path, adt_cmd = local_adt
-    print(adt_path)
-    print(os.path.join(adt_path, adt_cmd))
-    return adt_path, os.path.join(adt_path, adt_cmd)
-
+    return (adt_path, os.path.join(adt_path, adt_cmd))
 
 def _get_local_adt():
     path = find_executable('adt-run')
