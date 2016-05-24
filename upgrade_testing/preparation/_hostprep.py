@@ -79,7 +79,7 @@ def prepare_test_environment(testsuite):
 
         yield TestrunTempFiles(
             adt_base_path=adt_base_path,
-            adt_cmd=_adt_cmd,
+            adt_cmd=adt_cmd,
             run_config_file=run_config_path,
             # Should we create a dir so that it won't interfer?
             unbuilt_dir=temp_dir,
