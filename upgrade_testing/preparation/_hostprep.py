@@ -179,6 +179,7 @@ def _get_adt_path(tmp_dir):
     git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
     local_adt = _get_local_adt()
+    raise Exception('debug')
     if git_url or git_hash or local_adt is None:
         logger.info('Fetching autopkgtest from git url: %s', git_url)
         git_url = git_url or DEFAULT_GIT_URL
