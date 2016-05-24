@@ -177,7 +177,7 @@ def _get_adt_path(tmp_dir):
     # features (i.e. reboot-prepare).
     # This is needed as 3.14+ is not in vivid.
     git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
-    logger.info(environ.get('AUTOPKGTEST_GIT_REPO'))
+    logger.info(os.environ.get('AUTOPKGTEST_GIT_REPO'))
     git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
     local_adt = _get_local_adt()
     logger.info(git_url)
