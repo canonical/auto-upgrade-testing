@@ -132,7 +132,7 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
     :param testsuite: Dict containing testsuite details
     :param test_file_name: filepath for . . .
     """
-    # we can change 'test_source_retrieve75ce0der' so that it uses the testurn_files
+    # we can change 'test_source_retriever' so that it uses the testurn_files
     # and doesn't need to worry about cleanup.
     adt_run_command = get_adt_run_command(
         testsuite.provisioning,
@@ -154,11 +154,9 @@ def get_adt_run_command(
       results from the run.
 
     """
-    adt_run_exec = _get_adt_path(testrun_files.testrun_tmp_dir)
-
     # Default adt-run hardcoded adt command
     adt_cmd = [
-        adt_run_exec,
+        testrun_files.adt_cmd,
         '-B',
         '--user=root',
         '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),
@@ -198,34 +196,6 @@ def get_adt_run_command(
     )
 
     return adt_cmd + ['---'] + backend_args
-
-
-def _get_adt_path(tmp_dir):
-    # Grab the git version of autopkgtest so that we can use the latest
-    # features (i.e. reboot-prepare).
-    # This is needed as 3.14+ is not in vivid.
-    git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
-    git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
-    if git_url or git_hash:
-        git_url = git_url or DEFAULT_GIT_URL
-        git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-        print(os.listdir(tmp_dir))
-        print(os.listdir(git_trunk_path))
-        git_command = ['git', 'clone', git_url, git_trunk_path]
-        retval = run_command_with_logged_output(git_command)
-        if retval != 0:
-            raise ChildProcessError('{} exited with status {}'.format(
-                git_command, retval))
-        if git_hash:
-            git_hash_command = ['git',
-                           '--git-dir', os.path.join(git_trunk_path, '.git'),
-                           '--work-tree', git_trunk_path,
-                           'checkout', git_hash]
-            run_command_with_logged_output(git_hash_command)
-        return os.path.join(git_trunk_path, 'run-from-checkout')
-
-    else:
-        return 'adt-run'
 
 
 def main():
