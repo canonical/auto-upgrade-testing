@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 TestrunTempFiles = namedtuple(
     'TestrunTempFiles', [
         'adt_base_path',
+        'adt_cmd',
         'run_config_file',
         'testrun_tmp_dir',
         'unbuilt_dir',
@@ -176,7 +177,6 @@ def _get_adt_path(tmp_dir):
     if git_url or git_hash or local_adt is None:
         git_url = git_url or DEFAULT_GIT_URL
         git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-        print(os.listdir(git_trunk_path))
         git_command = ['git', 'clone', git_url, git_trunk_path]
         retval = run_command_with_logged_output(git_command)
         if retval != 0:
