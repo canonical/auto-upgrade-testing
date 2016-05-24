@@ -31,6 +31,8 @@ from upgrade_testing.preparation._testbed import get_testbed_storage_location
 from upgrade_testing.provisioning import run_command_with_logged_output
 from upgrade_testing.configspec import get_file_data_location
 
+DEFAULT_GIT_URL = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
+
 logger = logging.getLogger(__name__)
 
 

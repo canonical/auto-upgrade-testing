@@ -35,8 +35,6 @@ from argparse import ArgumentParser
 
 from upgrade_testing.provisioning._util import run_command_with_logged_output
 
-DEFAULT_GIT_URL = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
-
 logger = logging.getLogger(__name__)
 
 
