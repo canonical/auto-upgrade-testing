@@ -33,8 +33,6 @@ import yaml
 
 from argparse import ArgumentParser
 
-from upgrade_testing.provisioning._util import run_command_with_logged_output
-
 logger = logging.getLogger(__name__)
 
 

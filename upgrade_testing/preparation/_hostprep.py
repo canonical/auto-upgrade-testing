@@ -77,7 +77,7 @@ def prepare_test_environment(testsuite):
         post_path = os.path.join(temp_dir, 'post_scripts')
         _copy_script_files(testsuite.post_upgrade_tests.location, post_path)
 
-        adt_base_path, adt_cmd=_get_adt_path(temp_dir)
+        adt_base_path, adt_cmd = _get_adt_path(temp_dir)
 
         yield TestrunTempFiles(
             adt_base_path=adt_base_path,
@@ -189,10 +189,12 @@ def _get_adt_path(tmp_dir):
                 git_command, retval))
         if git_hash:
             logger.info('Checking out specific git hash: %s', git_hash)
-            git_hash_command = ['git',
-                           '--git-dir', os.path.join(git_trunk_path, '.git'),
-                           '--work-tree', git_trunk_path,
-                           'checkout', git_hash]
+            git_hash_command = [
+                'git',
+                '--git-dir', os.path.join(git_trunk_path, '.git'),
+                '--work-tree', git_trunk_path,
+                'checkout', git_hash,
+            ]
             run_command_with_logged_output(git_hash_command)
         adt_path = os.path.join(git_trunk_path, 'tools')
         adt_cmd = os.path.join(git_trunk_path, 'run-from-checkout')
@@ -202,6 +204,7 @@ def _get_adt_path(tmp_dir):
         adt_path, adt_cmd = local_adt
         adt_cmd = os.path.join(adt_path, adt_cmd)
     return (adt_path, adt_cmd)
+
 
 def _get_local_adt():
     path = find_executable('adt-run')

@@ -47,14 +47,14 @@ class TouchBackend(ProviderBackend):
 
         """
         return (
-            _device_connected(self.serial)
-            and self._device_in_available_state()
+            _device_connected(self.serial) and
+            self._device_in_available_state()
         )
 
     def _device_in_available_state(self):
         return (
-            self._device_in_required_state()
-            and _device_has_network_connection()
+            self._device_in_required_state() and
+            _device_has_network_connection()
         )
 
     def _device_in_required_state(self):
