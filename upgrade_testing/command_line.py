@@ -33,7 +33,6 @@ import yaml
 
 from argparse import ArgumentParser
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -151,15 +150,9 @@ def get_adt_run_command(
       results from the run.
 
     """
-
-    adt_run_exec = os.path.join(
-        testrun_files.adt_base_path,
-        'run-from-checkout'
-    )
-
     # Default adt-run hardcoded adt command
     adt_cmd = [
-        adt_run_exec,
+        testrun_files.adt_cmd,
         '-B',
         '--user=root',
         '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),

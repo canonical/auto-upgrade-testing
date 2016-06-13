@@ -23,12 +23,15 @@ import tempfile
 
 from collections import namedtuple
 from contextlib import contextmanager
+from distutils.spawn import find_executable
 from textwrap import dedent
 
 from upgrade_testing.configspec import test_source_retriever
 from upgrade_testing.preparation._testbed import get_testbed_storage_location
 from upgrade_testing.provisioning import run_command_with_logged_output
 from upgrade_testing.configspec import get_file_data_location
+
+DEFAULT_GIT_URL = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,7 @@ logger = logging.getLogger(__name__)
 TestrunTempFiles = namedtuple(
     'TestrunTempFiles', [
         'adt_base_path',
+        'adt_cmd',
         'run_config_file',
         'testrun_tmp_dir',
         'unbuilt_dir',
@@ -73,8 +77,11 @@ def prepare_test_environment(testsuite):
         post_path = os.path.join(temp_dir, 'post_scripts')
         _copy_script_files(testsuite.post_upgrade_tests.location, post_path)
 
+        adt_base_path, adt_cmd = _get_adt_path(temp_dir)
+
         yield TestrunTempFiles(
-            adt_base_path=_grab_git_version_autopkgtest(temp_dir),
+            adt_base_path=adt_base_path,
+            adt_cmd=adt_cmd,
             run_config_file=run_config_path,
             # Should we create a dir so that it won't interfer?
             unbuilt_dir=temp_dir,
@@ -165,15 +172,42 @@ def _create_autopkg_details(temp_dir):
     return dir_tree
 
 
-def _grab_git_version_autopkgtest(tmp_dir):
-    # Grab the git version of autopkgtest so that we can use the latest
-    # features (i.e. reboot-prepare).
-    # This is needed as 3.14+ is not in vivid.
-    # TODO: Remove this need by grabbing it from backports or universe.
-    git_url = 'git://anonscm.debian.org/autopkgtest/autopkgtest.git'
-    git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
-    git_command = ['git', 'clone', git_url, git_trunk_path]
+def _get_adt_path(tmp_dir):
+    # Check if we need to get a git version of autopkgtest
+    # (If environment variables are set or a local version can't be found)
+    git_url = os.environ.get('AUTOPKGTEST_GIT_REPO', None)
+    git_hash = os.environ.get('AUTOPKGTEST_GIT_HASH', None)
+    local_adt = _get_local_adt()
+    if git_url or git_hash or local_adt is None:
+        git_url = git_url or DEFAULT_GIT_URL
+        logger.info('Fetching autopkgtest from git url: %s', git_url)
+        git_trunk_path = os.path.join(tmp_dir, 'local_autopkgtest')
+        git_command = ['git', 'clone', git_url, git_trunk_path]
+        retval = run_command_with_logged_output(git_command)
+        if retval != 0:
+            raise ChildProcessError('{} exited with status {}'.format(
+                git_command, retval))
+        if git_hash:
+            logger.info('Checking out specific git hash: %s', git_hash)
+            git_hash_command = [
+                'git',
+                '--git-dir', os.path.join(git_trunk_path, '.git'),
+                '--work-tree', git_trunk_path,
+                'checkout', git_hash,
+            ]
+            run_command_with_logged_output(git_hash_command)
+        adt_path = os.path.join(git_trunk_path, 'tools')
+        adt_cmd = os.path.join(git_trunk_path, 'run-from-checkout')
+    else:
+        logger.info('Using installed autopkgtest:')
+        run_command_with_logged_output(['dpkg-query', '-W', 'autopkgtest'])
+        adt_path, adt_cmd = local_adt
+        adt_cmd = os.path.join(adt_path, adt_cmd)
+    return (adt_path, adt_cmd)
 
-    run_command_with_logged_output(git_command)
 
-    return git_trunk_path
+def _get_local_adt():
+    path = find_executable('adt-run')
+    if path:
+        return path.rsplit('/', 1)
+    return None
