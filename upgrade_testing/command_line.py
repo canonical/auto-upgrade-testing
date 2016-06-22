@@ -134,12 +134,13 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
         testsuite.provisioning,
         testrun_files,
         output_dir,
+        testsuite.backend_args,
     )
     subprocess.check_call(adt_run_command)
 
 
 def get_adt_run_command(
-        provisioning, testrun_files, results_dir):
+        provisioning, testrun_files, results_dir, backend_args=[]):
     """Construct the adt command to run.
 
     :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
@@ -189,7 +190,7 @@ def get_adt_run_command(
 
     backend_args = provisioning.get_adt_run_args(
         tmp_dir=testrun_files.testrun_tmp_dir
-    )
+    ) + backend_args
 
     return adt_cmd + ['---'] + backend_args
 

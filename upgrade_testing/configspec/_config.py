@@ -68,6 +68,10 @@ class TestSpecification:
             )
         )
 
+        backend_args = details.get('backend_args', [])
+        self.backend_args = [arg.format(script_location=script_location)
+                             for arg in backend_args]
+
     @property
     def test_source(self):
         if self._test_source_dir is None:
