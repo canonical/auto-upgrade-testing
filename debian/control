@@ -10,8 +10,8 @@ Build-Depends: debhelper (>= 9),
                python3-setuptools,
                python3-yaml,
 Standards-Version: 3.9.3
-Homepage: https://launchpad.net/autopkgtest-upgrade-testing
-Vcs-Bzr: https://code.launchpad.net/~auto-upgrade-testing-dev/autopkgtest-upgrade-testing/trunk
+Homepage: https://launchpad.net/auto-upgrade-testing
+Vcs-Bzr: https://code.launchpad.net/~canonical-platform-qa/auto-upgrade-testing/autopkgtest
 X-Python3-Version: >= 3.3
 
 Package: auto-upgrade-testing
