@@ -65,6 +65,9 @@ def parse_args():
     parser.add_argument(
         '--results-dir',
         help='Directory to store results generated during the run.')
+    parser.add_argument(
+        '--adt-args', '-a',
+        help='Arguments to pass through to the autopkgtest runner.')
     return parser.parse_args()
 
 
@@ -120,7 +123,7 @@ def display_results(output_dir):
     print('\n'.join(output))
 
 
-def execute_adt_run(testsuite, testrun_files, output_dir):
+def execute_adt_run(testsuite, testrun_files, output_dir, adt_args=''):
     """Prepare the adt-run to execute.
 
     Copy all the files into the expected place etc.
@@ -135,12 +138,14 @@ def execute_adt_run(testsuite, testrun_files, output_dir):
         testrun_files,
         output_dir,
         testsuite.backend_args,
+        adt_args,
     )
     subprocess.check_call(adt_run_command)
 
 
 def get_adt_run_command(
-        provisioning, testrun_files, results_dir, backend_args=[]):
+        provisioning, testrun_files, results_dir, backend_args=[],
+        adt_args=''):
     """Construct the adt command to run.
 
     :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
@@ -158,7 +163,7 @@ def get_adt_run_command(
         '--user=root',
         '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),
         '--output-dir={}'.format(results_dir),
-    ]
+    ] + adt_args.split()
 
     # Copy across the test scripts.
     pre_dest_dir = '{testbed_location}/pre_scripts/'.format(
@@ -241,7 +246,8 @@ def main():
             # Setup output dir
             output_dir = get_output_dir(args)
 
-            execute_adt_run(testsuite, created_files, output_dir)
+            execute_adt_run(testsuite, created_files, output_dir,
+                            args.adt_args)
 
         display_results(output_dir)
 
