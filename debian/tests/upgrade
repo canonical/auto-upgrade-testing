@@ -373,10 +373,15 @@ function do_normal_upgrade() {
     # Ensure we have do-release-upgrade
     apt-get update
     apt-get dist-upgrade -y
-    apt-get -y --force-yes install openssh-server update-manager-core
+    apt-get -y --force-yes install distro-info openssh-server update-manager-core
     # Allow upgrade from lts to non-lts
     sed 's/Prompt=lts/Prompt=normal/' -i /etc/update-manager/release-upgrades
-    do-release-upgrade -d -f DistUpgradeViewNonInteractive
+    UPGRADE_CMD="do-release-upgrade -f DistUpgradeViewNonInteractive"
+    DEV_MODE=""
+    if [ $(lsb_release -sc) == $(distro-info --stable) ] ; then
+        DEV_MODE="-d"
+    fi
+    $UPGRADE_CMD $DEV_MODE
     STATUS=$?
 }
 
