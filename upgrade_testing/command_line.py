@@ -66,7 +66,7 @@ def parse_args():
         '--results-dir',
         help='Directory to store results generated during the run.')
     parser.add_argument(
-        '--adt-args', '-a',
+        '--adt-args', '-a', default='',
         help='Arguments to pass through to the autopkgtest runner.')
     return parser.parse_args()
 
