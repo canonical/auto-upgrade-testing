@@ -132,7 +132,8 @@ def display_results(output_dir):
         test_cases.append(test_case)
 
     test_suite = junit_xml.TestSuite('Auto Upgrade Testing', test_cases)
-    with open(os.path.join(artifacts_directory, 'junit.xml')) as xml_file:
+    with open(os.path.join(artifacts_directory, 'junit.xml'),
+              'w') as xml_file:
         junit_xml.TestSuite.to_file(xml_file, [test_suite])
     print('\n'.join(output))
 
