@@ -17,13 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from upgrade_testing.configspec import definition_reader
-from upgrade_testing.preparation import (
-    get_testbed_storage_location,
-    prepare_test_environment,
-)
-
 import datetime
+import junit_xml
 import logging
 import os
 import sys
@@ -32,6 +27,12 @@ import tempfile
 import yaml
 
 from argparse import ArgumentParser
+from upgrade_testing.configspec import definition_reader
+from upgrade_testing.preparation import (
+    get_testbed_storage_location,
+    prepare_test_environment,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -112,14 +113,27 @@ def display_results(output_dir):
         results = yaml.safe_load(f)
 
     # this can be html/xml/whatver
+    test_cases = []
     output = []
     output.append('Pre script results:')
     for test, result in results['pre_script_output'].items():
         output.append('\t{test}: {result}'.format(test=test, result=result))
+        test_case = junit_xml.TestCase(test)
+        if result == 'FAIL':
+            test_case.add_failure_info('Test failed')
+        test_cases.append(test_case)
 
     output.append('Post upgrade test results:')
     for test, result in results['post_test_output'].items():
         output.append('\t{test}: {result}'.format(test=test, result=result))
+        test_case = junit_xml.TestCase(test)
+        if result == 'FAIL':
+            test_case.add_failure_info('Test failed')
+        test_cases.append(test_case)
+
+    test_suite = junit_xml.TestSuite('Auto Upgrade Testing', test_cases)
+    with open(os.path.join(artifacts_directory, 'junit.xml')) as xml_file:
+        junit_xml.TestSuite.to_file(xml_file, [test_suite])
     print('\n'.join(output))
 
 
