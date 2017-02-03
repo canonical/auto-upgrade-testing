@@ -23,7 +23,6 @@ Depends: ${misc:Depends},
          python3-yaml,
          python3-lxc,
          python3-pkg-resources,
-         python3-junit.xml,
          android-tools-adb,
          phablet-tools,
 Description: Test release upgrades in a virtual environment

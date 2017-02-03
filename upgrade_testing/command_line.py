@@ -18,7 +18,7 @@
 #
 
 import datetime
-import junit_xml
+import junitparser
 import logging
 import os
 import sys
@@ -113,28 +113,27 @@ def display_results(output_dir):
         results = yaml.safe_load(f)
 
     # this can be html/xml/whatver
-    test_cases = []
+    test_suite = junitparser.TestSuite('Auto Upgrade Testing')
     output = []
     output.append('Pre script results:')
     for test, result in results['pre_script_output'].items():
         output.append('\t{test}: {result}'.format(test=test, result=result))
-        test_case = junit_xml.TestCase(test)
+        test_case = junitparser.TestCase(test)
         if result == 'FAIL':
-            test_case.add_failure_info('Test failed')
-        test_cases.append(test_case)
+            test_case.result = junitparser.Failure('Test Failed')
+        test_suite.add_testcase(test_case)
 
     output.append('Post upgrade test results:')
     for test, result in results['post_test_output'].items():
         output.append('\t{test}: {result}'.format(test=test, result=result))
-        test_case = junit_xml.TestCase(test)
+        test_case = junitparser.TestCase(test)
         if result == 'FAIL':
-            test_case.add_failure_info('Test failed')
-        test_cases.append(test_case)
+            test_case.result = junitparser.Failure('Test Failed')
+        test_suite.add_testcase(test_case)
 
-    test_suite = junit_xml.TestSuite('Auto Upgrade Testing', test_cases)
-    with open(os.path.join(artifacts_directory, 'junit.xml'),
-              'w') as xml_file:
-        junit_xml.TestSuite.to_file(xml_file, [test_suite])
+    xml = junitparser.JunitXml()
+    xml.add_testsuite(test_suite)
+    xml.write(os.path.join(artifacts_directory, 'junit.xml'))
     print('\n'.join(output))
 
 
