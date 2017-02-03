@@ -131,7 +131,7 @@ def display_results(output_dir):
             test_case.result = junitparser.Failure('Test Failed')
         test_suite.add_testcase(test_case)
 
-    xml = junitparser.JunitXml()
+    xml = junitparser.JUnitXml()
     xml.add_testsuite(test_suite)
     xml.write(os.path.join(artifacts_directory, 'junit.xml'))
     print('\n'.join(output))
