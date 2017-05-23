@@ -20,4 +20,4 @@
 def get_testbed_storage_location():
     # Any changes to this location will need to be updated in the autopkgtest
     # script (TMP_LOCATION var).
-    return '/tmp/ubuntu-upgrade-testing'
+    return '/var/tmp/ubuntu-upgrade-testing'

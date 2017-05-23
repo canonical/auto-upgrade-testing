@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TMP_LOCATION="/tmp/ubuntu-upgrade-testing"
+TMP_LOCATION="/var/tmp/ubuntu-upgrade-testing"
 BASE_LOCATION="${ADT_ARTIFACTS}/upgrade_run_config"
 PRE_SCRIPT_LOCATION="${BASE_LOCATION}/pre_scripts"
 POST_SCRIPT_LOCATION="${BASE_LOCATION}/post_scripts"
