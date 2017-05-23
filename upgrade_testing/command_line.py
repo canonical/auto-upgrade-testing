@@ -138,7 +138,7 @@ def display_results(output_dir):
 
 
 def execute_adt_run(testsuite, testrun_files, output_dir, adt_args=''):
-    """Prepare the adt-run to execute.
+    """Prepare the autopkgtest to execute.
 
     Copy all the files into the expected place etc.
 
@@ -170,10 +170,12 @@ def get_adt_run_command(
       results from the run.
 
     """
-    # Default adt-run hardcoded adt command
+    # Default autopkgtest hardcoded adt command
     adt_cmd = [
         testrun_files.adt_cmd,
         '-B',
+        '-U',
+        '-d',
         '--user=root',
         '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),
         '--output-dir={}'.format(results_dir),
