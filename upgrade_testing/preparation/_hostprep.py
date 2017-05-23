@@ -207,7 +207,7 @@ def _get_adt_path(tmp_dir):
 
 
 def _get_local_adt():
-    path = find_executable('autopkgtest')
+    path = find_executable('adt-run')
     if path:
         return path.rsplit('/', 1)
     return None
