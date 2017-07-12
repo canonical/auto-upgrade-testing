@@ -69,6 +69,11 @@ def parse_args():
     parser.add_argument(
         '--adt-args', '-a', default='',
         help='Arguments to pass through to the autopkgtest runner.')
+    parser.add_argument(
+        '--keep-overlay', '-k',
+        default=False,
+        action='store_true',
+        help='Whether to keep the resulting overlay image')
     return parser.parse_args()
 
 
@@ -137,7 +142,8 @@ def display_results(output_dir):
     print('\n'.join(output))
 
 
-def execute_adt_run(testsuite, testrun_files, output_dir, adt_args=''):
+def execute_adt_run(testsuite, testrun_files, output_dir, adt_args='',
+                    keep_overlay=False):
     """Prepare the autopkgtest to execute.
 
     Copy all the files into the expected place etc.
@@ -153,13 +159,14 @@ def execute_adt_run(testsuite, testrun_files, output_dir, adt_args=''):
         output_dir,
         testsuite.backend_args,
         adt_args,
+        keep_overlay
     )
     subprocess.check_call(adt_run_command)
 
 
 def get_adt_run_command(
         provisioning, testrun_files, results_dir, backend_args=[],
-        adt_args=''):
+        adt_args='', keep_overlay=False):
     """Construct the adt command to run.
 
     :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
@@ -210,7 +217,8 @@ def get_adt_run_command(
     )
 
     backend_args = provisioning.get_adt_run_args(
-        tmp_dir=testrun_files.testrun_tmp_dir
+        tmp_dir=testrun_files.testrun_tmp_dir,
+        keep_overlay=keep_overlay
     ) + backend_args
 
     return adt_cmd + ['---'] + backend_args
@@ -263,7 +271,9 @@ def main():
             output_dir = get_output_dir(args)
 
             execute_adt_run(testsuite, created_files, output_dir,
-                            args.adt_args)
+                            args.adt_args, args.keep_overlay)
+
+            testsuite.provisioning.close()
 
         display_results(output_dir)
 

@@ -58,6 +58,9 @@ class ProvisionSpecification:
         """Provision the stored backend."""
         return self.backend.create(adt_base_path)
 
+    def close(self):
+        return self.backend.close() if hasattr(self.backend, 'close') else None
+
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
         raise NotImplementedError()
