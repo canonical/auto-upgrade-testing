@@ -8,21 +8,7 @@ if [ -f $OUTPUT ]; then
     rm $OUTPUT
 fi
 
-python3 -m virtualenv -p python3 venv_tests
-. venv_tests/bin/activate
-
-if [ -f ~/.proxy_info ] ; then
-    source ~/.proxy_info
-fi
-
-if [ "$HTTPS_PROXY" ]; then
-    echo "Using proxy: $HTTPS_PROXY to install dependencies"
-    pip install --proxy $HTTPS_PROXY flake8
-else
-    pip install flake8
-fi
-
-venv_tests/bin/python3 -m flake8 --output-file=$OUTPUT .
+python3 -m flake8 --output-file=$OUTPUT .
 
 result=$?
 if [ $result != 0 ]; then
