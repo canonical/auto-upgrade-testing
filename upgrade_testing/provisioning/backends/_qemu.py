@@ -25,10 +25,7 @@ import subprocess
 import tempfile
 import threading
 
-try:
-    from paramiko.ssh_exception import SSHException
-except ImportError:
-    pass
+from paramiko.ssh_exception import SSHException
 
 from upgrade_testing.provisioning._util import run_command_with_logged_output
 from upgrade_testing.provisioning.backends._ssh import SshBackend

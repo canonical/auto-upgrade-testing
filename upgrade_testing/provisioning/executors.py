@@ -18,15 +18,12 @@
 
 
 import os
-try:
-    import paramiko
-except ImportError:
-    pass
 import sys
 import time
-
 from abc import ABCMeta
 from abc import abstractmethod
+
+import paramiko
 
 TIMEOUT_CMD = 60
 TIMEOUT_CONNECT = 120
