@@ -170,7 +170,8 @@ class QemuBackend(SshBackend):
         elif not os.path.isdir(overlay_dir):
             os.makedirs(overlay_dir)
         subprocess.check_call(
-            ['qemu-img', 'create', '-f', 'qcow2', '-b', os.path.join(CACHE_DIR, self.image_name),
+            ['qemu-img', 'create', '-f', 'qcow2', '-b',
+             os.path.join(CACHE_DIR, self.image_name),
              overlay_img])
         subprocess.check_call(['sudo', 'chmod', '777', overlay_img])
 
@@ -200,9 +201,11 @@ class QemuBackend(SshBackend):
 
     def get_disk_args(self, overlay):
         """Return qemu-system disk args. If overlay is specified then an overlay
-        image at that path will be created and specified in returned arguments. If
-        no overlay is none then the base image will be returned in the arguments.
-        :param overlay: Path of overlay image to use, otherwise None if not needed.
+        image at that path will be created and specified in returned arguments.
+        If no overlay is none then the base image will be returned in
+        the arguments.
+        :param overlay: Path of overlay image to use, otherwise None
+        if not needed.
         :return: Disk image arguments as string.
         """
         if overlay:
@@ -237,7 +240,8 @@ class QemuBackend(SshBackend):
                      port=None, overlay=None):
         """Launch qemu-system to install the iso file into the disk image.
         :param working_dir: Working directory to use.
-        :param disk_image_path: Path of the disk image file used for installation.
+        :param disk_image_path: Path of the disk image file used for
+        installation.
         :param ram: Amount of ram allocated to qemu.
         :param cpu: Number of cpus allocated to qemu.
         :param headless: Whether to run installer in headless mode or not.

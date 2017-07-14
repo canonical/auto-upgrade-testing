@@ -1,0 +1,5 @@
+[flake8]
+ignore = E999, W503
+exclude = venv_tests/
+max-complexity = 7
+max-line-length = 80
