@@ -8,7 +8,7 @@ if [ -f $OUTPUT ]; then
     rm $OUTPUT
 fi
 
-virtualenv -p python3 venv_tests
+python3 -m virtualenv -p python3 venv_tests
 . venv_tests/bin/activate
 
 if [ -f ~/.proxy_info ] ; then
