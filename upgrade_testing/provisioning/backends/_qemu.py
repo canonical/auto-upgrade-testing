@@ -172,6 +172,7 @@ class QemuBackend(SshBackend):
         subprocess.check_call(
             ['qemu-img', 'create', '-f', 'qcow2', '-b', os.path.join(CACHE_DIR, self.image_name),
              overlay_img])
+        subprocess.check_call(['sudo', 'chmod', '777', overlay_img])
 
     @property
     def name(self):
