@@ -18,4 +18,3 @@ if [ $result != 0 ]; then
 else
     echo -e -n "${GREEN}Congratulations!!! Static check PASSED\n"
 fi
-deactivate
