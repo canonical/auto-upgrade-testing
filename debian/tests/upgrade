@@ -378,7 +378,14 @@ function do_normal_upgrade() {
     if [ $(lsb_release -sc) == $(distro-info --lts) ] ; then
         sed 's/Prompt=lts/Prompt=normal/' -i /etc/update-manager/release-upgrades
     fi
-    do-release-upgrade -d -f DistUpgradeViewNonInteractive
+
+    local version=$(do-release-upgrade -c | awk '/New release/ {print $3}' | tr -d \')
+    if [ -z "${version}" ]; then
+        do-release-upgrade -d -f DistUpgradeViewNonInteractive
+    else
+        do-release-upgrade -f DistUpgradeViewNonInteractive
+    fi
+
     STATUS=$?
 }
 
