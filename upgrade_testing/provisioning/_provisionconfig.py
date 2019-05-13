@@ -311,7 +311,7 @@ def _replace_placeholders(original_string, token_lookup):
 
     for token in token_strings:
         result = re.sub(
-            '\${}'.format(token),
+            r'\${}'.format(token),
             token_lookup[token](),
             original_string
         )

@@ -271,10 +271,10 @@ function get_potential_upgrade_version() {
         echo ""
     fi
 
-    local version=$(do-release-upgrade -c | awk '/New release/ {print $3}' | tr -d \')
+    local version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ ! "${version}" ]; then
         # Lets try for a development version
-        local version=$(do-release-upgrade -c -d | awk '/New release/ {print $3}' | tr -d \')
+        local version=$(do-release-upgrade -p -c -d | awk '/New release/ {print $3}' | tr -d \')
         echo "${version}"
     else
         echo "${version}"
@@ -379,11 +379,11 @@ function do_normal_upgrade() {
         sed 's/Prompt=lts/Prompt=normal/' -i /etc/update-manager/release-upgrades
     fi
 
-    local version=$(do-release-upgrade -c | awk '/New release/ {print $3}' | tr -d \')
+    local version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ -z "${version}" ]; then
-        do-release-upgrade -d -f DistUpgradeViewNonInteractive
+        do-release-upgrade -p -d -f DistUpgradeViewNonInteractive
     else
-        do-release-upgrade -f DistUpgradeViewNonInteractive
+        do-release-upgrade -p -f DistUpgradeViewNonInteractive
     fi
 
     STATUS=$?

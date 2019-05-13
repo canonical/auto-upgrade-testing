@@ -208,7 +208,7 @@ class SshBackend(ProviderBackend):
         child = pexpect.spawn(cmd)
         try:
             index = child.expect(
-                ['\$', 'password', 'denied'], timeout=TIMEOUT_CONNECT)
+                [r'\$', 'password', 'denied'], timeout=TIMEOUT_CONNECT)
         except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
             index = -1
         finally:
