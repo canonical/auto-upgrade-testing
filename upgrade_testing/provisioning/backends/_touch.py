@@ -1,4 +1,4 @@
-#
+# flake8: noqa
 # Ubuntu Upgrade Testing
 # Copyright (C) 2015 Canonical
 #
