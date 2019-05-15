@@ -274,7 +274,7 @@ function get_potential_upgrade_version() {
     local version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ ! "${version}" ]; then
         # Lets try for a development version
-        local version=$(do-release-upgrade -p -c -d | awk '/New release/ {print $3}' | tr -d \')
+        local version=$(do-release-upgrade -c -d | awk '/New release/ {print $3}' | tr -d \')
         echo "${version}"
     else
         echo "${version}"
