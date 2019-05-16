@@ -381,7 +381,7 @@ function do_normal_upgrade() {
 
     local version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ -z "${version}" ]; then
-        do-release-upgrade -p -d -f DistUpgradeViewNonInteractive
+        do-release-upgrade -d -f DistUpgradeViewNonInteractive
     else
         do-release-upgrade -p -f DistUpgradeViewNonInteractive
     fi
