@@ -64,7 +64,7 @@ QEMU_DISK_IMAGE_OPTS = (
 QEMU_DISK_IMAGE_OVERLAY_OPTS = (
     '-drive file={overlay_img},cache=unsafe,if=virtio,index=0 '
 )
-DEFAULT_RAM = '2G'
+DEFAULT_RAM = '2048'
 DEFAULT_CPU = '2'
 HEADLESS = True
 
@@ -160,7 +160,8 @@ class QemuBackend(SshBackend):
                                      self.image_name))
             super().connect()
             return super().get_adt_run_args()
-        return ['qemu', os.path.join(CACHE_DIR, self.image_name)]
+        return ['qemu', '-c', DEFAULT_CPU, '--ram-size', DEFAULT_RAM,
+            os.path.join(CACHE_DIR, self.image_name)]
 
     def create_overlay_image(self, overlay_img):
         """Create an overlay image for specified base image."""
