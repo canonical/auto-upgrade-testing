@@ -161,7 +161,7 @@ class QemuBackend(SshBackend):
             super().connect()
             return super().get_adt_run_args()
         return ['qemu', '-c', DEFAULT_CPU, '--ram-size', DEFAULT_RAM,
-            os.path.join(CACHE_DIR, self.image_name)]
+                os.path.join(CACHE_DIR, self.image_name)]
 
     def create_overlay_image(self, overlay_img):
         """Create an overlay image for specified base image."""
