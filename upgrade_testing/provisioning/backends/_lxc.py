@@ -57,7 +57,7 @@ class LXCBackend(ProviderBackend):
         logger.info('Creating lxc container for run.')
 
         cmd = [
-            os.path.join(adt_base_path, 'adt-build-lxc'),
+            os.path.join(adt_base_path, 'autopkgtest-build-lxc'),
             self.distro,
             self.release,
             self.arch,
