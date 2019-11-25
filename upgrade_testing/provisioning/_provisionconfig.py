@@ -234,7 +234,7 @@ class QemuProvisionSpecification(ProvisionSpecification):
         self.releases = provision_config['releases']
         self.arch = provision_config.get('arch', 'amd64')
         self.image_name = provision_config.get(
-            'image_name', 'adt-{}-{}-cloud.img'.format(self.initial_state,
+            'image_name', 'autopkgtest-{}-{}-cloud.img'.format(self.initial_state,
                                                        self.arch))
         provision_config_directory = os.path.dirname(
             os.path.abspath(provision_path)

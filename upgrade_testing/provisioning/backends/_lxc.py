@@ -49,7 +49,7 @@ class LXCBackend(ProviderBackend):
         return container_name in lxc.list_containers()
 
     def _get_container_name(self):
-        return 'adt-{}-{}'.format(self.release, self.arch)
+        return 'autopkgtest-{}-{}'.format(self.release, self.arch)
 
     def create(self, adt_base_path):
         """Create an lxc container."""

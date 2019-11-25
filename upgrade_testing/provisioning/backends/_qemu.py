@@ -114,7 +114,7 @@ class QemuBackend(SshBackend):
         )
         run_command_with_logged_output(cmd, shell=True)
 
-        initial_image_name = 'adt-{}-{}-cloud.img'.format(self.release,
+        initial_image_name = 'autopkgtest-{}-{}-cloud.img'.format(self.release,
                                                           self.arch)
         initial_image_path = os.path.join(CACHE_DIR, initial_image_name)
         final_image_path = os.path.join(CACHE_DIR, self.image_name)
