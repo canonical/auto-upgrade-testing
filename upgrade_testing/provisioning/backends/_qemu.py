@@ -105,7 +105,7 @@ class QemuBackend(SshBackend):
         logger.info('Creating qemu image for run.')
         cmd = '{builder_cmd} -a {arch} -r {release} -o {output} {args}'.format(
             builder_cmd=os.path.join(
-                adt_base_path, 'autopkgtest-buildvm-ubuntu'
+                adt_base_path, 'autopkgtest-buildvm-ubuntu-cloud'
             ),
             arch=self.arch,
             release=self.release,

@@ -184,7 +184,7 @@ def get_adt_run_command(
         '-U',
         '-d',
         '--user=root',
-        '--unbuilt-tree={}'.format(testrun_files.unbuilt_dir),
+        testrun_files.unbuilt_dir,
         '--output-dir={}'.format(results_dir),
     ] + adt_args.split()
 
@@ -221,7 +221,7 @@ def get_adt_run_command(
         keep_overlay=keep_overlay
     ) + backend_args
 
-    return adt_cmd + ['---'] + backend_args
+    return adt_cmd + ['--'] + backend_args
 
 
 def main():
