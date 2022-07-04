@@ -66,6 +66,7 @@ QEMU_DISK_IMAGE_OVERLAY_OPTS = (
 )
 DEFAULT_RAM = '2048'
 DEFAULT_CPU = '2'
+TIMEOUT_REBOOT = '300'
 HEADLESS = True
 
 logger = logging.getLogger(__name__)
@@ -161,6 +162,7 @@ class QemuBackend(SshBackend):
             super().connect()
             return super().get_adt_run_args()
         return ['qemu', '-c', DEFAULT_CPU, '--ram-size', DEFAULT_RAM,
+                '--timeout-reboot', TIMEOUT_REBOOT,
                 os.path.join(CACHE_DIR, self.image_name)]
 
     def create_overlay_image(self, overlay_img):
