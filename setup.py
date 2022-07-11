@@ -28,10 +28,10 @@ VERSION = '1.0'
 
 
 setup(
-    name='autopkgtest-upgrade-testing',
+    name='upgrade-testing',
     version=VERSION,
     description='Test framework for testing system upgrades.',
-    url='https://launchpad.net/autopkgtest-upgrade-testing',
+    url='https://launchpad.net/auto-upgrade-testing',
     license='GPLv3',
     packages=find_packages(),
     package_data={
@@ -39,7 +39,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'autopkgtest-upgrade-testing = upgrade_testing.command_line:main'
+            'auto-upgrade-testing = upgrade_testing.command_line:main'
         ]
     },
 )

@@ -1,5 +1,5 @@
 auto-upgrade-testing (0.1-1) trusty; urgency=medium
 
-  * Initial release.
+  * Initial release. (LP: #1546699)
 
- -- Max Brustkern <max@canonical.com>  Tue, 27 Oct 2015 13:57:34 -0400
+ -- Max Brustkern <max@canonical.com>  Fri, 24 Jun 2016 13:32:34 -0400
