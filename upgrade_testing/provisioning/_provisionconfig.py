@@ -19,7 +19,6 @@
 import logging
 import os
 import re
-import subprocess
 
 from upgrade_testing.provisioning import backends
 
@@ -83,7 +82,6 @@ class ProvisionSpecification:
 def get_specification_type(spec_name):
     __spec_map = dict(
         lxc=LXCProvisionSpecification,
-        touch=TouchProvisionSpecification,
         qemu=QemuProvisionSpecification,
     )
     try:
@@ -132,98 +130,6 @@ class LXCProvisionSpecification(ProvisionSpecification):
             backend=self.backend,
             dist=self.distribution,
             releases=self.releases
-        )
-
-
-class TouchProvisionSpecification(ProvisionSpecification):
-    def __init__(self, provision_config, provision_path):
-        self._provisionconfig_path = provision_path
-        try:
-            self.channel = provision_config['channel']
-            self.revision = provision_config['revision']
-            password = provision_config['password']
-        except KeyError as e:
-            raise ValueError('Missing config detail: {}'.format(str(e)))
-
-        serial = provision_config.get('serial', None)
-        recovery_file = provision_config.get('recovery_file', None)
-        self.backend = backends.TouchBackend(
-            self.initial_state,
-            password,
-            serial,
-            recovery_file,
-        )
-
-    def _construct_state_string(self, rev):
-        return backends.TouchBackend.format_device_state_string(
-            self.channel,
-            rev
-        )
-
-    @property
-    def system_states(self):
-        return self._construct_state_string(self.revision)
-
-    @property
-    def initial_state(self):
-        """Return the string indicating the required initial system state."""
-        return self._construct_state_string(self.revision)
-
-    @property
-    def final_state(self):
-        """Return the string indicating the required final system state."""
-        return self._construct_state_string(
-            self._get_latest_revno_for_channel()
-        )
-
-    def _get_latest_revno_for_channel(self):
-        """Given a revision detail determine the most current revno.
-
-        Used to check if the device is updated to the correct revision.
-
-        """
-        device = self._get_connected_device_name()
-        cmd = [
-            'ubuntu-device-flash',
-            'query',
-            '--channel={}'.format(self.channel),
-            '--device={}'.format(device),
-            '--show-image'
-        ]
-        try:
-            output = subprocess.check_output(cmd, universal_newlines=True)
-            revno = re.search('^Version: (.*)$', output, re.MULTILINE).group(1)
-            return revno
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                'Failed to query ubuntu-device-flash to determine current '
-                'channel revno: {}'.format(e)
-            )
-        except AttributeError:
-            raise RuntimeError(
-                'Unable to parse ubuntu-device-flash output'
-            )
-
-    def _get_connected_device_name(self):
-        # Perhaps this should live in the backend.
-        details = backends.TouchBackend.get_current_device_details(
-            self.backend.serial
-        )
-        try:
-            return details['device_name']
-        except KeyError:
-            raise RuntimeError('Unable to determine the device name.')
-
-    def get_adt_run_args(self, **kwargs):
-        """Return list with the adt args for this provisioning backend."""
-        return self.backend.get_adt_run_args(**kwargs)
-
-    def __repr__(self):
-        return '{classname}(backend={backend}, channel={channel}, revisions={revisions})'.format(  # NOQA
-            classname=self.__class__.__name__,
-            backend=self.backend,
-            channel=self.channel,
-            revisions=self.system_states
         )
 
 

@@ -29,8 +29,6 @@ Depends: ${misc:Depends},
          python3-pexpect,
          python3-pkg-resources,
          python3-retrying,
-         android-tools-adb,
-         phablet-tools,
 Description: Test release upgrades in a virtual environment
  A tool to do QA for release upgrades in ubuntu that performs upgrades
  in a virtual environment. LXC is initially supported, with qemu/kvm to come

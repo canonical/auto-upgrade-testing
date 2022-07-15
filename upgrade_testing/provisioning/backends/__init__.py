@@ -17,7 +17,6 @@
 #
 
 from upgrade_testing.provisioning.backends._lxc import LXCBackend
-from upgrade_testing.provisioning.backends._touch import TouchBackend
 from upgrade_testing.provisioning.backends._qemu import QemuBackend
 
-__all__ = ['LXCBackend', 'TouchBackend', 'QemuBackend']
+__all__ = ['LXCBackend', 'QemuBackend']
