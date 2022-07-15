@@ -29,39 +29,6 @@ The following supported backends detail their available settings both required a
 LXC
 ---
 
-Ubuntu Touch
-------------
-
-This backend supports Ubuntu devices.
-
-Backend name: **touch**
-
-Required elements
-~~~~~~~~~~~~~~~~~
-
-:channel:
-   Representing the channel that the device should be flashed
-   from. e.g. ubuntu-touch/rc-proposed/bq-aquaris.en
-
-:password: Password for the device
-
-:revision: The revision of the provided channel to flash and provison on the
-           device. The device will be upgraded to the latest revision of the
-           same channel during the upgrade process.
-           N.B. There is no mechanism to upgrade to an arbitary revision.
-
-
-Optional elements
-~~~~~~~~~~~~~~~~~
-
-:serial: The serial of the specific device to interact with. If more than one
-         device is attached an no serial is specified an error will be
-         raised. If there is a single device no serial is required.
-
-:ssid: Network ssid to connect to. After being flashed this ssid will be setup
-       on the target device.
-
-
 Virtual Machine
 ---------------
 

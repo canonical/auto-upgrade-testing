@@ -10,10 +10,6 @@ TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 CANARY_NAME="/tmp/upgrade_script_reboot_canary"
 
-# Due to reboot_prepare we lose the logs from the upgrade process. Store them
-# somewhere and add them to the output once we come back from reboot.
-TOUCH_REBOOT_LOG="/home/phablet/tmp_auto-upgrade-test_upgrade.log"
-
 # Only copy on the first run through
 if [ ! -d "${BASE_LOCATION}" ]; then
    mkdir "${BASE_LOCATION}"
@@ -74,7 +70,6 @@ function main() {
 
     # If we have rebooted we pick up from here.
     output_running_system
-    output_extra_logging
     exit_if_reboot_canary_exists
     exit_if_havent_upgraded
 
@@ -150,25 +145,8 @@ function exit_if_reboot_canary_exists() {
     fi
 }
 
-function output_extra_logging() {
-    # Touch devices need the upgrade log output (after the fact).
-    if running_on_touch_device; then
-        upgrade_log "Output of upgrade log (after upgrade due to logging limitations."
-        upgrade_log "--------------------------------------------------------------------------------"
-        cat "${TOUCH_REBOOT_LOG}"
-        upgrade_log "--------------------------------------------------------------------------------"
-    fi
-}
-
 function _get_running_system_name() {
-    if running_on_touch_device; then
-        local image_detail=$(system-image-cli -i)
-        local revno=$(echo "${image_detail}" | awk '/version\ version:/ {print $3}')
-        local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
-        echo "${channel}:${revno}"
-    else
-        echo $(lsb_release -sc)
-    fi
+    echo $(lsb_release -sc)
 }
 
 function pre_tests() {
@@ -237,10 +215,6 @@ function do_setup() {
 function need_another_upgrade() {
     # Check if we're not running the right version
     # If not are we able to upgrade to the right version?
-    if running_on_touch_device; then
-        return 1
-    fi
-
     local running_system=$(_get_running_system_name)
     if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
         potential_upgrade_version=$(get_potential_upgrade_version)
@@ -255,22 +229,13 @@ function need_another_upgrade() {
 }
 
 function get_current_version() {
-    if running_on_touch_device; then
-        echo $(_get_running_system_name)
-    else
-        echo $(lsb_release -rs)
-    fi
+    echo $(lsb_release -rs)
 }
 
 function get_potential_upgrade_version() {
     # Attempt to get the version that we would upgrade to. Attempts to use
     # development version if needed.
     # Might return an empty string if there are no upgrade candidates at all.
-    # Always return empty string for touch devices.
-    if running_on_touch_device; then
-        echo ""
-    fi
-
     local version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ ! "${version}" ]; then
         # Lets try for a development version
@@ -295,46 +260,13 @@ function do_upgrade_and_maybe_reboot() {
     target="${POST_SYSTEM_STATE}"
     upgrade_log "Attempting to upgrade from ${current} to ${target}"
 
-    if running_on_touch_device; then
-        do_touch_device_upgrade
-    else
-        do_normal_upgrade
-        exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
-        maybe_reboot
-    fi
+    do_normal_upgrade
+    exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
+    maybe_reboot
 
     exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
 
     upgrade_log "Upgrading complete."
-}
-
-function do_touch_device_upgrade() {
-    upgrade_log "Starting device upgrade."
-    local channel=`expr "${POST_SYSTEM_STATE}" : '\(^.*\):'`
-    local revision=`expr "${POST_SYSTEM_STATE}" : '^.*:\([0-9]*\)$'`
-    upgrade_log "Upgrading to: channel: ${channel} revno: ${revision}"
-
-    # Do both so we have some history of the logs as well as save time after
-    # the reboot prepare (which will just start the run again after a while.)
-    if ! have_internet_connection; then
-        upgrade_log "Aborting device upgrade due to no network connection."
-        STATUS=1
-        return
-    fi
-
-    upgrade_log "Downloading details with: system-image-cli -v --no-reboot --channel ${channel}"
-    system-image-cli -v --no-reboot --channel "${channel}"
-    local download_results=$?
-    if (( $download_results != 0 )); then
-        upgrade_log "Failed to download image details."
-        STATUS=$download_results
-    else
-        upgrade_log "Now actually doing install now which will reboot the device."
-        # Don't output/log anything after reboot_prepare as it stops us being able to reboot the device.
-        reboot_prepare
-        system-image-cli -v --channel "${channel}" &>> "${TOUCH_REBOOT_LOG}"
-        STATUS=$?
-    fi
 }
 
 function have_internet_connection() {
@@ -421,27 +353,8 @@ function collect_results() {
     cp -fr /etc/apt/ "${system_details_dir}/apt/"
 }
 
-function running_on_touch_device() {
-    TRUE=0
-    FALSE=1
-    # RUNNING_BACKEND is supplied by the configuration file.
-    if [ "${RUNNING_BACKEND}" = "touch" ]; then
-        return $TRUE
-    else
-        return $FALSE
-    fi
-}
-
 function output_running_system() {
-    if running_on_touch_device; then
-        # Return a string like: {channel}:{rev}
-        local image_detail=$(system-image-cli -i)
-        local revno=$(echo "${image_detail}" | awk '/version\ version:/ {print $3}')
-        local channel=$(echo "${image_detail}" | awk '/channel:/ {print $2}')
-        echo "${channel}:${revno}"
-    else
-        echo "Currently running: $(lsb_release -a)"
-    fi
+    echo "Currently running: $(lsb_release -a)"
 }
 
 main "$@"
