@@ -17,6 +17,7 @@ Homepage: https://launchpad.net/auto-upgrade-testing
 Vcs-Git: https://github.com/canonical/auto-upgrade-testing.git
 Vcs-Browser: https://github.com/canonical/auto-upgrade-testing
 X-Python3-Version: >= 3.3
+Rules-Requires-Root: no
 
 Package: auto-upgrade-testing
 Architecture: all
