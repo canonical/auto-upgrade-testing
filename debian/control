@@ -32,5 +32,4 @@ Depends: ${misc:Depends},
          python3-retrying,
 Description: Test release upgrades in a virtual environment
  A tool to do QA for release upgrades in ubuntu that performs upgrades
- in a virtual environment. LXC is initially supported, with qemu/kvm to come
- later.
+ in a virtual environment.
