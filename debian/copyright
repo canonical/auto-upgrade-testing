@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: auto-upgrade-testing
-Source: http://launchpad.net/auto-upgrade-testing
+Source: https://github.com/canonical/auto-upgrade-testing
 
 Files: *
 Copyright: 2015 Canonical
