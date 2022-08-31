@@ -14,7 +14,8 @@ Build-Depends: debhelper-compat (= 13),
                python3-yaml,
 Standards-Version: 4.6.1
 Homepage: https://launchpad.net/auto-upgrade-testing
-Vcs-Bzr: https://code.launchpad.net/~canonical-platform-qa/auto-upgrade-testing/autopkgtest
+Vcs-Git: https://github.com/canonical/auto-upgrade-testing.git
+Vcs-Browser: https://github.com/canonical/auto-upgrade-testing
 X-Python3-Version: >= 3.3
 
 Package: auto-upgrade-testing
