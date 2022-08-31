@@ -12,7 +12,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-retrying,
                python3-setuptools,
                python3-yaml,
-Standards-Version: 3.9.7
+Standards-Version: 4.6.1
 Homepage: https://launchpad.net/auto-upgrade-testing
 Vcs-Bzr: https://code.launchpad.net/~canonical-platform-qa/auto-upgrade-testing/autopkgtest
 X-Python3-Version: >= 3.3
