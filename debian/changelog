@@ -1,3 +1,36 @@
+auto-upgrade-testing (0.2) kinetic; urgency=medium
+
+  * New version 0.2.
+  * Main functional changes since 0.1:
+    - virt-qemu: bump the reboot timeout to 300s
+    - upgrade: allow LTS-to-LTS upgrades if available
+    - fixed arguments of autopkgtest following migration from adt
+    - Rename adt-* to autopkgtest-*
+    - qemu backend: honor DEFAULT_CPU and DEFAULT_RAM
+    - d/t/upgrade: the switches -p and -d for do-release-upgrade are mutually
+      exclusive so only use -d
+    - d/t/upgrade: drop support for deprecated/abandoned backends
+    - d/t/upgrade: use the dist-upgrader from -proposed since that
+      has fixes that affect upgrading e.g. LP: #1796193
+    - Adding keep-overlay option to persist the resulting image file in
+      order to be able to run system tests after the upgrade is done.
+    - moved storage from /tmp (which gets clear on reboot) to /var/tmp
+  * Main packaging changes:
+    - d/control: Build-Depend on python3 instead of python3-all-dev
+    - d/control: bump Standards-Version to 4.6.1, no changes needed
+    - d/control: bump X-Python3-Version to >= 3.6 (Bionic's)
+    - d/control: bump dh compat level to 13 (via debhelper-compat)
+    - d/control: replace Vcs-Bzr with Vcs-Git
+    - d/control: specify Rules-Requires-Root: no
+    - d/control: update package long description
+    - d/rules: drop dh_override_auto_build
+    - d/clean: remove upgrade_testing.egg-info/
+    - d/copyright: switch to secure (https) URL for Format
+    - d/copyright: update Source field with new repository location
+    - d/s/format: switch to native packaging
+
+ -- Paride Legovini <paride@ubuntu.com>  Fri, 02 Sep 2022 14:12:01 +0200
+
 auto-upgrade-testing (0.1-1) trusty; urgency=medium
 
   * Initial release. (LP: #1546699)
