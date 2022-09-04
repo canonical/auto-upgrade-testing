@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+  configure)
+    chmod 1777 /var/cache/auto-upgrade-testing
+  ;;
+esac
+
+#DEBHELPER#
