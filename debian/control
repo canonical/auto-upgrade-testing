@@ -2,9 +2,9 @@ Source: auto-upgrade-testing
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Build-Depends: debhelper (>= 9),
+Build-Depends: debhelper-compat (= 13),
                dh-python,
-               python3-all-dev (>= 3.4),
+               python3,
                python3-flake8,
                python3-lxc,
                python3-paramiko,
@@ -12,10 +12,12 @@ Build-Depends: debhelper (>= 9),
                python3-retrying,
                python3-setuptools,
                python3-yaml,
-Standards-Version: 3.9.7
+Standards-Version: 4.6.1
 Homepage: https://launchpad.net/auto-upgrade-testing
-Vcs-Bzr: https://code.launchpad.net/~canonical-platform-qa/auto-upgrade-testing/autopkgtest
-X-Python3-Version: >= 3.3
+Vcs-Git: https://github.com/canonical/auto-upgrade-testing.git
+Vcs-Browser: https://github.com/canonical/auto-upgrade-testing
+X-Python3-Version: >= 3.6
+Rules-Requires-Root: no
 
 Package: auto-upgrade-testing
 Architecture: all
@@ -31,5 +33,4 @@ Depends: ${misc:Depends},
          python3-retrying,
 Description: Test release upgrades in a virtual environment
  A tool to do QA for release upgrades in ubuntu that performs upgrades
- in a virtual environment. LXC is initially supported, with qemu/kvm to come
- later.
+ in a virtual environment.
