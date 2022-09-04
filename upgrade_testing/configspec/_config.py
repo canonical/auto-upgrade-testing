@@ -18,16 +18,16 @@
 
 import logging
 import os
-import yaml
-
 from collections import namedtuple
+
+import yaml
 
 from upgrade_testing.provisioning import ProvisionSpecification
 
 logger = logging.getLogger(__name__)
 
 
-ScriptStore = namedtuple('ScriptStore', ['executables', 'location'])
+ScriptStore = namedtuple("ScriptStore", ["executables", "location"])
 
 
 class TestSpecification:
@@ -37,6 +37,7 @@ class TestSpecification:
 
     i.e. the provisioning parts etc.
     """
+
     def __init__(self, details, provision_spec):
         self.provisioning = provision_spec
 
@@ -44,46 +45,44 @@ class TestSpecification:
             self._reader(details)
         except KeyError as e:
             logger.error(
-                'Missing required configuration detail: {}'.format(str(e))
+                "Missing required configuration detail: {}".format(str(e))
             )
 
     def _reader(self, details):
-        self.name = details['testname']
+        self.name = details["testname"]
 
         script_location = _get_script_location_path(
-            details,
-            self.provisioning._provisionconfig_path
+            details, self.provisioning._provisionconfig_path
         )
 
         self.pre_upgrade_scripts = ScriptStore(
             *_generate_script_list(
-                details['pre_upgrade_scripts'],
-                script_location
+                details["pre_upgrade_scripts"], script_location
             )
         )
         self.post_upgrade_tests = ScriptStore(
             *_generate_script_list(
-                details['post_upgrade_tests'],
-                script_location
+                details["post_upgrade_tests"], script_location
             )
         )
 
-        backend_args = details.get('backend_args', [])
-        self.backend_args = [arg.format(script_location=script_location)
-                             for arg in backend_args]
+        backend_args = details.get("backend_args", [])
+        self.backend_args = [
+            arg.format(script_location=script_location) for arg in backend_args
+        ]
 
     @property
     def test_source(self):
         if self._test_source_dir is None:
-            return './'
+            return "./"
         else:
             return self._test_source_dir
 
     def __repr__(self):
-        return '{classname}(name={name}, provisioning={prov})'.format(
+        return "{classname}(name={name}, provisioning={prov})".format(
             classname=self.__class__.__name__,
             name=self.name,
-            prov=self.provisioning
+            prov=self.provisioning,
         )
 
 
@@ -91,18 +90,15 @@ def _get_script_location_path(provision_details, provisionfile_path):
     """Return the full path for a script location."""
     # If script_location starts with ./ or ../ then we need to get the abs path
     # of the provision file and append it.
-    location = provision_details.get('script_location', None)
+    location = provision_details.get("script_location", None)
     if location is None:
         return location
-    if location.startswith('file://.'):
+    if location.startswith("file://."):
         provisionfile_dir = os.path.dirname(provisionfile_path)
         full_path = os.path.abspath(
-            os.path.join(
-                provisionfile_dir,
-                location.replace('file://', '')
-            )
+            os.path.join(provisionfile_dir, location.replace("file://", ""))
         )
-        return 'file://{}'.format(full_path)
+        return "file://{}".format(full_path)
     # Seems location is a full abs path already.
     return location
 
@@ -117,8 +113,7 @@ def _generate_script_list(scripts_or_path, script_source_path=None):
 
     if isinstance(scripts_or_path, list):
         return _get_list_of_scripts_locations(
-            scripts_or_path,
-            script_source_path
+            scripts_or_path, script_source_path
         )
 
     abs_path = _get_abs_script_location(scripts_or_path, script_source_path)
@@ -127,7 +122,7 @@ def _generate_script_list(scripts_or_path, script_source_path=None):
         return _get_list_of_scripts_in_directory(abs_path)
 
     raise ValueError(
-        'No scripts found. {} is neither a path or list of scripts'
+        "No scripts found. {} is neither a path or list of scripts"
     )
 
 
@@ -142,15 +137,14 @@ def _get_list_of_scripts_locations(scripts, script_source_path):
 
     """
     if script_source_path is None:
-        raise ValueError('No script location supplied for scripts')
-    sane_script_location = script_source_path.replace('file://', '')
+        raise ValueError("No script location supplied for scripts")
+    sane_script_location = script_source_path.replace("file://", "")
     # scripts is already a list of scripts.
     for f in scripts:
         if not os.path.isfile(os.path.join(sane_script_location, f)):
             raise ValueError(
                 'Supplied script "{}" was not found at: {}'.format(
-                    f,
-                    sane_script_location
+                    f, sane_script_location
                 )
             )
     return (scripts, script_source_path)
@@ -161,8 +155,7 @@ def _get_abs_script_location(script_path, script_source_path):
     if script_source_path is not None:
         return os.path.abspath(
             os.path.join(
-                script_source_path.replace('file://', ''),
-                script_path
+                script_source_path.replace("file://", ""), script_path
             )
         )
     else:
@@ -179,17 +172,19 @@ def _get_list_of_scripts_in_directory(abs_path):
     script_file_list = _get_executable_files(abs_path)
     if not script_file_list:
         raise ValueError(
-            'No executatble scripts found at location: {}'.format(abs_path)
+            "No executatble scripts found at location: {}".format(abs_path)
         )
     # Update the script_location path to suit.
-    return (script_file_list, 'file://{}'.format(abs_path))
+    return (script_file_list, "file://{}".format(abs_path))
 
 
 def _get_executable_files(abs_path):
     def is_executable(path):
         return os.path.isfile(path) and os.access(path, os.X_OK)
+
     return [
-        f for f in os.listdir(abs_path)
+        f
+        for f in os.listdir(abs_path)
         if is_executable(os.path.join(abs_path, f))
     ]
 
@@ -210,16 +205,14 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
     for test in testdef:
         if provisiondef_filepath is None:
             provision_details = ProvisionSpecification.from_testspec(
-                test,
-                testdef_filepath
+                test, testdef_filepath
             )
         else:
             # Perhaps we want to be able to pass args to the commandline
             # instead of writing a file? We would always fudge that and
             # write to a file-like object and use that instead.
             provision_details = ProvisionSpecification.from_provisionspec(
-                _load_configdef(provisiondef_filepath),
-                provisiondef_filepath
+                _load_configdef(provisiondef_filepath), provisiondef_filepath
             )
 
         specs.append(TestSpecification(test, provision_details))
@@ -228,22 +221,20 @@ def definition_reader(testdef_filepath, provisiondef_filepath=None):
 
 def _load_configdef(testdef_filepath):
     # Need a better way to confirm this.
-    if testdef_filepath.endswith('.yaml'):
+    if testdef_filepath.endswith(".yaml"):
         return _read_yaml_config(testdef_filepath)
     else:
         raise ValueError(
-            'Unknown configuration file format: {}'.format(
-                testdef_filepath
-            )
+            "Unknown configuration file format: {}".format(testdef_filepath)
         )
 
 
 def _read_yaml_config(filepath):
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             return yaml.safe_load(f)
     except FileNotFoundError as e:
-        err_msg = 'Unable to open config file: {}'.format(filepath)
+        err_msg = "Unable to open config file: {}".format(filepath)
         logger.error(err_msg)
-        e.args += (err_msg, )
+        e.args += (err_msg,)
         raise

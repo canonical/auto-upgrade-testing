@@ -21,6 +21,5 @@ import pkg_resources
 
 def get_file_data_location():
     import upgrade_testing
-    return pkg_resources.resource_filename(
-        upgrade_testing.__name__, 'data'
-    )
+
+    return pkg_resources.resource_filename(upgrade_testing.__name__, "data")

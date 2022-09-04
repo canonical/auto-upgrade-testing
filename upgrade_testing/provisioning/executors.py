@@ -20,8 +20,7 @@
 import os
 import sys
 import time
-from abc import ABCMeta
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
 import paramiko
 
@@ -35,14 +34,14 @@ class Result:
 
     def __init__(self):
         self.status = None
-        self.output = ''
+        self.output = ""
 
 
 class SSHClient:
     """This class manages the paramiko ssh client"""
 
     def __init__(self):
-        """ The ssh can be initialized either through a password or with a
+        """The ssh can be initialized either through a password or with a
         private key file and the passphrase
         :param hostname: The hostname to connect
         :param user: The remote user in the host
@@ -57,8 +56,13 @@ class SSHClient:
         """Connect to remote host."""
         timeout = float(timeout)
         self.client.connect(
-            hostname, username=user, password=password, port=port,
-            timeout=timeout, banner_timeout=timeout)
+            hostname,
+            username=user,
+            password=password,
+            port=port,
+            timeout=timeout,
+            banner_timeout=timeout,
+        )
 
     def close(self):
         """Close the connection"""
@@ -76,19 +80,23 @@ class SSHClient:
         end = time.time() + timeout
         result = Result()
         channel.exec_command(cmd)
-        while (not channel.exit_status_ready() or (
-               channel.exit_status_ready() and channel.recv_ready())):
+        while not channel.exit_status_ready() or (
+            channel.exit_status_ready() and channel.recv_ready()
+        ):
             if channel.recv_ready():
                 self._process_output(
-                    result, log_stdout, channel.recv(1024).decode())
+                    result, log_stdout, channel.recv(1024).decode()
+                )
             elif time.time() > end:
-                print('Timeout waiting {} seconds for command to '
-                      'complete: {}'.format(timeout, cmd))
+                print(
+                    "Timeout waiting {} seconds for command to "
+                    "complete: {}".format(timeout, cmd)
+                )
                 raise TimeoutError
             time.sleep(0.2)
         # Add a new line after command has completed to ensure output
         # is separated.
-        self._process_output(result, log_stdout, '\n')
+        self._process_output(result, log_stdout, "\n")
         result.status = channel.recv_exit_status()
         return result
 
@@ -102,7 +110,7 @@ class SSHClient:
     def put(self, local_path, remote_path):
         """Copy a file through sftp from the local_path to the remote_path"""
         if not os.path.isfile(local_path):
-            raise RuntimeError('File to copy does not exist')
+            raise RuntimeError("File to copy does not exist")
 
         with self.client.open_sftp() as sftp:
             sftp.put(local_path, remote_path)
@@ -113,7 +121,7 @@ class SSHClient:
             sftp.get(remote_path, local_path)
 
         if not os.path.isfile(local_path):
-            raise RuntimeError('File couldn\'t be copied')
+            raise RuntimeError("File couldn't be copied")
 
 
 class Executor:
@@ -137,14 +145,14 @@ class Executor:
         pass
 
     def reboot(self):
-        result = self.run_sudo('shutdown -r now')
+        result = self.run_sudo("shutdown -r now")
         if result.status > 0:
-            raise PermissionError('Reboot failed, check password.')
+            raise PermissionError("Reboot failed, check password.")
 
     def shutdown(self):
-        result = self.run_sudo('shutdown now')
+        result = self.run_sudo("shutdown now")
         if result.status > 0:
-            raise PermissionError('Shutdown failed, check password.')
+            raise PermissionError("Shutdown failed, check password.")
 
     @abstractmethod
     def wait_for_device(self, timeout=None):
@@ -159,25 +167,31 @@ class Executor:
         pass
 
     def _get_sudo_command(self, cmd):
-        command = 'sudo {}'.format(cmd)
+        command = "sudo {}".format(cmd)
         if self.password:
-            command = 'echo {} | sudo -S {}'.format(self.password, cmd)
+            command = "echo {} | sudo -S {}".format(self.password, cmd)
         return command
 
 
 class SSHExecutor(Executor):
-
     def __init__(self):
         self.ssh_client = SSHClient()
 
-    def connect(self, username, password, port, host='localhost',
-                timeout=TIMEOUT_CONNECT):
+    def connect(
+        self,
+        username,
+        password,
+        port,
+        host="localhost",
+        timeout=TIMEOUT_CONNECT,
+    ):
         self.password = password
         count = max(1, timeout)
         for attempt in range(count):
             try:
                 self.ssh_client.connect(
-                    host, username, password, port, timeout)
+                    host, username, password, port, timeout
+                )
             except TypeError:
                 # This can happen when target not yet running so just try again
                 time.sleep(1)
@@ -185,7 +199,7 @@ class SSHExecutor(Executor):
                 raise
             else:
                 return
-        raise RuntimeError('Could not connect to target.')
+        raise RuntimeError("Could not connect to target.")
 
     def close(self):
         self.ssh_client.close()

@@ -19,27 +19,26 @@
 #
 
 import sys
+
 from setuptools import find_packages, setup
 
-assert sys.version_info >= (3,), 'Python 3 is required'
+assert sys.version_info >= (3,), "Python 3 is required"
 
 
-VERSION = '1.0'
+VERSION = "1.0"
 
 
 setup(
-    name='upgrade-testing',
+    name="upgrade-testing",
     version=VERSION,
-    description='Test framework for testing system upgrades.',
-    url='https://launchpad.net/auto-upgrade-testing',
-    license='GPLv3',
+    description="Test framework for testing system upgrades.",
+    url="https://launchpad.net/auto-upgrade-testing",
+    license="GPLv3",
     packages=find_packages(),
-    package_data={
-        'upgrade_testing': ['data/*']
-    },
+    package_data={"upgrade_testing": ["data/*"]},
     entry_points={
-        'console_scripts': [
-            'auto-upgrade-testing = upgrade_testing.command_line:main'
+        "console_scripts": [
+            "auto-upgrade-testing = upgrade_testing.command_line:main"
         ]
     },
 )

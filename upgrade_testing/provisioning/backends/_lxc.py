@@ -17,8 +17,9 @@
 #
 
 import logging
-import lxc
 import os
+
+import lxc
 
 from upgrade_testing.provisioning._util import run_command_with_logged_output
 from upgrade_testing.provisioning.backends._base import ProviderBackend
@@ -27,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class LXCBackend(ProviderBackend):
-
     def __init__(self, release, distribution, arch):
         """Provide backend capabilities as requested in the provision spec.
 
@@ -45,38 +45,38 @@ class LXCBackend(ProviderBackend):
 
         """
         container_name = self._get_container_name()
-        logger.info('Checking for {}'.format(container_name))
+        logger.info("Checking for {}".format(container_name))
         return container_name in lxc.list_containers()
 
     def _get_container_name(self):
-        return 'autopkgtest-{}-{}'.format(self.release, self.arch)
+        return "autopkgtest-{}-{}".format(self.release, self.arch)
 
     def create(self, adt_base_path):
         """Create an lxc container."""
 
-        logger.info('Creating lxc container for run.')
+        logger.info("Creating lxc container for run.")
 
         cmd = [
-            os.path.join(adt_base_path, 'autopkgtest-build-lxc'),
+            os.path.join(adt_base_path, "autopkgtest-build-lxc"),
             self.distro,
             self.release,
             self.arch,
         ]
         retcode = run_command_with_logged_output(cmd)
         if retcode != 0:
-            raise RuntimeError('Failed to create lxc container.')
+            raise RuntimeError("Failed to create lxc container.")
 
-        logger.info('Container created.')
+        logger.info("Container created.")
 
     def get_adt_run_args(self, **kwargs):
-        return ['lxc', '-s', self._get_container_name()]
+        return ["lxc", "-s", self._get_container_name()]
 
     @property
     def name(self):
-        return 'lxc'
+        return "lxc"
 
     def __repr__(self):
-        return '{classname}(release={release}, arch={arch})'.format(
+        return "{classname}(release={release}, arch={arch})".format(
             classname=self.__class__.__name__,
             release=self.release,
             arch=self.arch,

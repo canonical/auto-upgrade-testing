@@ -20,6 +20,6 @@ from upgrade_testing.preparation._hostprep import prepare_test_environment
 from upgrade_testing.preparation._testbed import get_testbed_storage_location
 
 __all__ = [
-    'get_testbed_storage_location',
-    'prepare_test_environment',
+    "get_testbed_storage_location",
+    "prepare_test_environment",
 ]

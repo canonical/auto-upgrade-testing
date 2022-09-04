@@ -18,21 +18,21 @@
 #
 
 import datetime
-import junitparser
 import logging
 import os
-import sys
 import subprocess
+import sys
 import tempfile
+from argparse import ArgumentParser
+
+import junitparser
 import yaml
 
-from argparse import ArgumentParser
 from upgrade_testing.configspec import definition_reader
 from upgrade_testing.preparation import (
     get_testbed_storage_location,
     prepare_test_environment,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def setup_logging():
 
     ch = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     ch.setFormatter(formatter)
     root.addHandler(ch)
@@ -54,26 +54,33 @@ def parse_args():
     """
     do_setup (better name) if the backend isn't setup do it.
     """
-    parser = ArgumentParser('Run system tests for Upgrade Tests.')
+    parser = ArgumentParser("Run system tests for Upgrade Tests.")
     parser.add_argument(
-        '--config', '-c',
-        help='The config file to use for this run.')
+        "--config", "-c", help="The config file to use for this run."
+    )
     parser.add_argument(
-        '--provision',
+        "--provision",
         default=False,
-        action='store_true',
-        help='Provision the requested backend')
+        action="store_true",
+        help="Provision the requested backend",
+    )
     parser.add_argument(
-        '--results-dir',
-        help='Directory to store results generated during the run.')
+        "--results-dir",
+        help="Directory to store results generated during the run.",
+    )
     parser.add_argument(
-        '--adt-args', '-a', default='',
-        help='Arguments to pass through to the autopkgtest runner.')
+        "--adt-args",
+        "-a",
+        default="",
+        help="Arguments to pass through to the autopkgtest runner.",
+    )
     parser.add_argument(
-        '--keep-overlay', '-k',
+        "--keep-overlay",
+        "-k",
         default=False,
-        action='store_true',
-        help='Whether to keep the resulting overlay image')
+        action="store_true",
+        help="Whether to keep the resulting overlay image",
+    )
     return parser.parse_args()
 
 
@@ -93,57 +100,54 @@ def get_output_dir(args):
     if args.results_dir is not None:
         base_dir = args.results_dir
     else:
-        base_dir = tempfile.mkdtemp(prefix='upgrade-tests')
-        logger.info('Creating folder for results.')
+        base_dir = tempfile.mkdtemp(prefix="upgrade-tests")
+        logger.info("Creating folder for results.")
 
-    ts_dir = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+    ts_dir = datetime.datetime.now().strftime("%Y%m%d.%H%M%S")
     full_path = os.path.join(os.path.abspath(base_dir), ts_dir)
 
-    logger.info('Creating results dir: {}'.format(full_path))
+    logger.info("Creating results dir: {}".format(full_path))
     os.makedirs(full_path, exist_ok=True)
 
     return full_path
 
 
 def display_results(output_dir):
-    artifacts_directory = os.path.join(
-        output_dir, 'artifacts', 'upgrade_run'
-    )
-    logger.info(
-        'Results can be found here: {}'.format(artifacts_directory)
-    )
+    artifacts_directory = os.path.join(output_dir, "artifacts", "upgrade_run")
+    logger.info("Results can be found here: {}".format(artifacts_directory))
 
-    results_yaml = os.path.join(artifacts_directory, 'runner_results.yaml')
-    with open(results_yaml, 'r') as f:
+    results_yaml = os.path.join(artifacts_directory, "runner_results.yaml")
+    with open(results_yaml, "r") as f:
         results = yaml.safe_load(f)
 
     # this can be html/xml/whatver
-    test_suite = junitparser.TestSuite('Auto Upgrade Testing')
+    test_suite = junitparser.TestSuite("Auto Upgrade Testing")
     output = []
-    output.append('Pre script results:')
-    for test, result in results['pre_script_output'].items():
-        output.append('\t{test}: {result}'.format(test=test, result=result))
+    output.append("Pre script results:")
+    for test, result in results["pre_script_output"].items():
+        output.append("\t{test}: {result}".format(test=test, result=result))
         test_case = junitparser.TestCase(test)
-        if result == 'FAIL':
-            test_case.result = junitparser.Failure('Test Failed')
+        if result == "FAIL":
+            test_case.result = junitparser.Failure("Test Failed")
         test_suite.add_testcase(test_case)
 
-    output.append('Post upgrade test results:')
-    for test, result in results['post_test_output'].items():
-        output.append('\t{test}: {result}'.format(test=test, result=result))
+    output.append("Post upgrade test results:")
+    for test, result in results["post_test_output"].items():
+        output.append("\t{test}: {result}".format(test=test, result=result))
         test_case = junitparser.TestCase(test)
-        if result == 'FAIL':
-            test_case.result = junitparser.Failure('Test Failed')
+        if result == "FAIL":
+            test_case.result = junitparser.Failure("Test Failed")
         test_suite.add_testcase(test_case)
 
     xml = junitparser.JUnitXml()
     xml.add_testsuite(test_suite)
-    xml.write(os.path.join(artifacts_directory, 'junit.xml'))
-    print('\n'.join(output))
+    xml.write(os.path.join(artifacts_directory, "junit.xml"))
+    print("\n".join(output))
 
 
-def execute_adt_run(testsuite, testrun_files, output_dir, adt_args='',
-                    keep_overlay=False):
+def execute_adt_run(
+    testsuite, testrun_files, output_dir, adt_args="", keep_overlay=False
+):
     """Prepare the autopkgtest to execute.
 
     Copy all the files into the expected place etc.
@@ -159,14 +163,19 @@ def execute_adt_run(testsuite, testrun_files, output_dir, adt_args='',
         output_dir,
         testsuite.backend_args,
         adt_args,
-        keep_overlay
+        keep_overlay,
     )
     subprocess.check_call(adt_run_command)
 
 
 def get_adt_run_command(
-        provisioning, testrun_files, results_dir, backend_args=[],
-        adt_args='', keep_overlay=False):
+    provisioning,
+    testrun_files,
+    results_dir,
+    backend_args=[],
+    adt_args="",
+    keep_overlay=False,
+):
     """Construct the adt command to run.
 
     :param provisioning: upgrade_testing.provisioning.ProvisionSpecification
@@ -180,48 +189,48 @@ def get_adt_run_command(
     # Default autopkgtest hardcoded adt command
     adt_cmd = [
         testrun_files.adt_cmd,
-        '-B',
-        '-U',
-        '-d',
-        '--user=root',
+        "-B",
+        "-U",
+        "-d",
+        "--user=root",
         testrun_files.unbuilt_dir,
-        '--output-dir={}'.format(results_dir),
+        "--output-dir={}".format(results_dir),
     ] + adt_args.split()
 
     # Copy across the test scripts.
-    pre_dest_dir = '{testbed_location}/pre_scripts/'.format(
+    pre_dest_dir = "{testbed_location}/pre_scripts/".format(
         testbed_location=get_testbed_storage_location()
     )
-    copy_cmd = '--copy={src}:{dest}'.format(
-        src=testrun_files.pre_scripts,
-        dest=pre_dest_dir
+    copy_cmd = "--copy={src}:{dest}".format(
+        src=testrun_files.pre_scripts, dest=pre_dest_dir
     )
     adt_cmd.append(copy_cmd)
 
-    post_dest_dir = '{testbed_location}/post_scripts/'.format(
+    post_dest_dir = "{testbed_location}/post_scripts/".format(
         testbed_location=get_testbed_storage_location()
     )
-    copy_cmd = '--copy={src}:{dest}'.format(
-        src=testrun_files.post_scripts,
-        dest=post_dest_dir
+    copy_cmd = "--copy={src}:{dest}".format(
+        src=testrun_files.post_scripts, dest=post_dest_dir
     )
     adt_cmd.append(copy_cmd)
 
     # Need to get some env vars across to the testbed. Namely tests to run and
     # test locations.
     adt_cmd.append(
-        '--copy={config}:{testbed_location}/auto_upgrade_test_settings'.format(
+        "--copy={config}:{testbed_location}/auto_upgrade_test_settings".format(
             config=testrun_files.run_config_file,
-            testbed_location=get_testbed_storage_location()
+            testbed_location=get_testbed_storage_location(),
         )
     )
 
-    backend_args = provisioning.get_adt_run_args(
-        tmp_dir=testrun_files.testrun_tmp_dir,
-        keep_overlay=keep_overlay
-    ) + backend_args
+    backend_args = (
+        provisioning.get_adt_run_args(
+            tmp_dir=testrun_files.testrun_tmp_dir, keep_overlay=keep_overlay
+        )
+        + backend_args
+    )
 
-    return adt_cmd + ['--'] + backend_args
+    return adt_cmd + ["--"] + backend_args
 
 
 def main():
@@ -232,16 +241,13 @@ def main():
         test_def_details = definition_reader(args.config)
     except KeyError:
         logger.error(
-            'Unable to parse configuration file: {}'.format(args.config)
+            "Unable to parse configuration file: {}".format(args.config)
         )
         sys.exit(1)
     except ValueError as e:
         logger.error(
-            'Unable to parse configuration file details from config {}.\n'
-            'ERROR: {}'.format(
-                args.config,
-                e
-            )
+            "Unable to parse configuration file details from config {}.\n"
+            "ERROR: {}".format(args.config, e)
         )
         sys.exit(1)
 
@@ -255,28 +261,33 @@ def main():
         with prepare_test_environment(testsuite) as created_files:
             if not testsuite.provisioning.backend_available():
                 if args.provision:
-                    logger.debug('Provising backend.')
+                    logger.debug("Provising backend.")
                     testsuite.provisioning.create(created_files.adt_base_path)
                 else:
                     logger.error(
-                        'No available backend for test: {}'.format(
+                        "No available backend for test: {}".format(
                             testsuite.name
                         )
                     )
                     continue
             else:
-                logger.info('Backend is available.')
+                logger.info("Backend is available.")
 
             # Setup output dir
             output_dir = get_output_dir(args)
 
-            execute_adt_run(testsuite, created_files, output_dir,
-                            args.adt_args, args.keep_overlay)
+            execute_adt_run(
+                testsuite,
+                created_files,
+                output_dir,
+                args.adt_args,
+                args.keep_overlay,
+            )
 
             testsuite.provisioning.close()
 
         display_results(output_dir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

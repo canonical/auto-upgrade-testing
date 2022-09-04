@@ -58,7 +58,7 @@ class ProvisionSpecification:
         return self.backend.create(adt_base_path)
 
     def close(self):
-        return self.backend.close() if hasattr(self.backend, 'close') else None
+        return self.backend.close() if hasattr(self.backend, "close") else None
 
     def get_adt_run_args(self, **kwargs):
         """Return list with the adt args for this provisioning backend."""
@@ -66,15 +66,15 @@ class ProvisionSpecification:
 
     @staticmethod
     def from_testspec(spec, spec_path):
-        backend_name = spec['provisioning']['backend']
+        backend_name = spec["provisioning"]["backend"]
         spec_type = get_specification_type(backend_name)
-        return spec_type(spec['provisioning'], spec_path)
+        return spec_type(spec["provisioning"], spec_path)
 
     @staticmethod
     def from_provisionspec(spec, spec_path):
         # A provision spec is almost the same as a testdef provision spec
         # except it doesn't have the parent stanza.
-        backend_name = spec['backend']
+        backend_name = spec["backend"]
         spec_type = get_specification_type(backend_name)
         return spec_type(spec, spec_path)
 
@@ -87,22 +87,20 @@ def get_specification_type(spec_name):
     try:
         return __spec_map[spec_name]
     except KeyError:
-        logger.error('Unknown spec name: {}'.format(spec_name))
+        logger.error("Unknown spec name: {}".format(spec_name))
         raise
 
 
 class LXCProvisionSpecification(ProvisionSpecification):
     def __init__(self, provision_config, provision_path):
         # Defaults to ubuntu
-        self.distribution = provision_config.get('distribution', 'ubuntu')
-        self.releases = provision_config['releases']
-        self.arch = provision_config['arch']
+        self.distribution = provision_config.get("distribution", "ubuntu")
+        self.releases = provision_config["releases"]
+        self.arch = provision_config["arch"]
         self._provisionconfig_path = provision_path
 
         self.backend = backends.LXCBackend(
-            self.initial_state,
-            self.distribution,
-            self.arch
+            self.initial_state, self.distribution, self.arch
         )
 
     @property
@@ -125,11 +123,11 @@ class LXCProvisionSpecification(ProvisionSpecification):
         return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
-        return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
+        return "{classname}(backend={backend}, distribution={dist}, releases={releases})".format(  # NOQA
             classname=self.__class__.__name__,
             backend=self.backend,
             dist=self.distribution,
-            releases=self.releases
+            releases=self.releases,
         )
 
 
@@ -137,19 +135,21 @@ class QemuProvisionSpecification(ProvisionSpecification):
     def __init__(self, provision_config, provision_path):
         self._provisionconfig_path = provision_path
 
-        self.releases = provision_config['releases']
-        self.arch = provision_config.get('arch', 'amd64')
+        self.releases = provision_config["releases"]
+        self.arch = provision_config.get("arch", "amd64")
         self.image_name = provision_config.get(
-            'image_name', 'autopkgtest-{}-{}-cloud.img'.format(self.initial_state,
-                                                       self.arch))
+            "image_name",
+            "autopkgtest-{}-{}-cloud.img".format(
+                self.initial_state, self.arch
+            ),
+        )
         provision_config_directory = os.path.dirname(
             os.path.abspath(provision_path)
         )
         self.build_args = _render_build_args(
-            provision_config.get('build_args', []),
-            provision_config_directory
+            provision_config.get("build_args", []), provision_config_directory
         )
-        logger.info('Using build args: {}'.format(self.build_args))
+        logger.info("Using build args: {}".format(self.build_args))
 
         self.backend = backends.QemuBackend(
             self.initial_state,
@@ -178,11 +178,11 @@ class QemuProvisionSpecification(ProvisionSpecification):
         return self.backend.get_adt_run_args(**kwargs)
 
     def __repr__(self):
-        return '{classname}(backend={backend}, distribution={dist}, releases={releases})'.format(  # NOQA
+        return "{classname}(backend={backend}, distribution={dist}, releases={releases})".format(  # NOQA
             classname=self.__class__.__name__,
             backend=self.backend,
             dist=self.distribution,
-            releases=self.releases
+            releases=self.releases,
         )
 
 
@@ -199,9 +199,9 @@ def _render_build_args(build_args, profile_path):
     _token_lookup = dict(PROFILE_PATH=lambda: profile_path)
 
     if not isinstance(build_args, list):
-        raise TypeError('build_args must be a list')
+        raise TypeError("build_args must be a list")
     if not all(isinstance(s, str) for s in build_args):
-        raise ValueError('build_args must contain strings.')
+        raise ValueError("build_args must contain strings.")
 
     new_args = []
     for arg in build_args:
@@ -217,9 +217,7 @@ def _replace_placeholders(original_string, token_lookup):
 
     for token in token_strings:
         result = re.sub(
-            r'\${}'.format(token),
-            token_lookup[token](),
-            original_string
+            r"\${}".format(token), token_lookup[token](), original_string
         )
         original_string = result
 

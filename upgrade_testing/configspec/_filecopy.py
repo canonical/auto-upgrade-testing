@@ -42,28 +42,28 @@ def test_source_retriever(source_location, dest_dir):
     :returns: string containing directory path to copy across
 
     """
-    if source_location.startswith('file://'):
+    if source_location.startswith("file://"):
         return _local_file_retrieval(source_location, dest_dir)
-    elif source_location.startswith('lp:'):
+    elif source_location.startswith("lp:"):
         return _bzr_file_retrieval(source_location, dest_dir)
     else:
-        raise ValueError('Unknown file protocol')
+        raise ValueError("Unknown file protocol")
 
 
 def _local_file_retrieval(source, dest_dir):
-    source_path = os.path.abspath(source.replace('file://', ''))
+    source_path = os.path.abspath(source.replace("file://", ""))
     shutil.copytree(source_path, dest_dir)
     return dest_dir
 
 
 def _bzr_file_retrieval(source, dest_dir):
-    bzr_cmd = ['bzr', 'export', dest_dir, source]
+    bzr_cmd = ["bzr", "export", dest_dir, source]
     try:
         subprocess.check_output(bzr_cmd)
     except subprocess.CalledProcessError:
-        logger.error('Failed to export path: {}'.format(source))
+        logger.error("Failed to export path: {}".format(source))
         raise ValueError(
-            'Unable to export from provided source: {}'.format(source)
+            "Unable to export from provided source: {}".format(source)
         )
 
     return dest_dir

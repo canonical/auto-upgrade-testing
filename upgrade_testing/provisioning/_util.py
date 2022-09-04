@@ -28,16 +28,16 @@ def run_command_with_logged_output(command, shell=False):
     :returns: Returncode of command that was run.
 
     """
-    logger.debug('Running command: {}'.format(command))
+    logger.debug("Running command: {}".format(command))
     with subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            bufsize=1,
-            universal_newlines=True,
-            shell=shell
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=1,
+        universal_newlines=True,
+        shell=shell,
     ) as proc:
         for line in proc.stdout:
-            logger.info(line.strip('\n'))
+            logger.info(line.strip("\n"))
         proc.wait()
         return proc.returncode

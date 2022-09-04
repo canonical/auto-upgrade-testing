@@ -22,9 +22,8 @@ from upgrade_testing.configspec import _config as _c
 
 
 class HelperMethodTestCases(unittest.TestCase):
-
     def test_load_configdef_raises_ValueError_on_non_yaml_filename(self):
-        self.assertRaises(ValueError, _c._load_configdef, 'test.txt')
+        self.assertRaises(ValueError, _c._load_configdef, "test.txt")
 
     def test_read_yaml_config_raises_on_nonexistant_file(self):
-        self.assertRaises(FileNotFoundError, _c._read_yaml_config, 'test.txt')
+        self.assertRaises(FileNotFoundError, _c._read_yaml_config, "test.txt")

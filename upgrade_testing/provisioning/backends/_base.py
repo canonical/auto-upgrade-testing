@@ -22,7 +22,7 @@ class ProviderBackend:
 
     def __init__(self, **args):
         raise NotImplementedError(
-            'Cannot be instatiated, please use an established backend'
+            "Cannot be instatiated, please use an established backend"
         )
 
     def available(self):

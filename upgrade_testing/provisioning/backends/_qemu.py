@@ -30,43 +30,29 @@ from paramiko.ssh_exception import SSHException
 from upgrade_testing.provisioning._util import run_command_with_logged_output
 from upgrade_testing.provisioning.backends._ssh import SshBackend
 
-CACHE_DIR = '/var/cache/auto-upgrade-testing'
-OVERLAY_DIR = os.path.join(CACHE_DIR, 'overlay')
+CACHE_DIR = "/var/cache/auto-upgrade-testing"
+OVERLAY_DIR = os.path.join(CACHE_DIR, "overlay")
 QEMU_LAUNCH_OPTS = (
-    '{qemu} -m {ram} -smp {cpu} -pidfile {workdir}/qemu.pid -localtime '
-    '-cpu core2duo -enable-kvm '
+    "{qemu} -m {ram} -smp {cpu} -pidfile {workdir}/qemu.pid -localtime "
+    "-cpu core2duo -enable-kvm "
 )
-QEMU_SYSTEM_AMD64 = 'qemu-system-x86_64'
-QEMU_SYSTEM_I386 = 'qemu-system-i386'
-ARCH_AMD64 = 'amd64'
-ARCH_I386 = 'i386'
-QEMU_DISPLAY_OPTS = (
-    '-display sdl '
-)
-QEMU_DISPLAY_VGA_OPTS = (
-    '-vga qxl '
-)
-QEMU_SOUND_OPTS = (
-    '-soundhw all '
-)
-QEMU_DISPLAY_HEADLESS = (
-    '-display none '
-)
-QEMU_NET_OPTS = (
-    '-net nic,model=virtio -net user'
-)
-QEMU_PORT_OPTS = (
-    ',hostfwd=tcp::{port}-:22 '
-)
-QEMU_DISK_IMAGE_OPTS = (
-    '-drive file={disk_img},if=virtio '
-)
+QEMU_SYSTEM_AMD64 = "qemu-system-x86_64"
+QEMU_SYSTEM_I386 = "qemu-system-i386"
+ARCH_AMD64 = "amd64"
+ARCH_I386 = "i386"
+QEMU_DISPLAY_OPTS = "-display sdl "
+QEMU_DISPLAY_VGA_OPTS = "-vga qxl "
+QEMU_SOUND_OPTS = "-soundhw all "
+QEMU_DISPLAY_HEADLESS = "-display none "
+QEMU_NET_OPTS = "-net nic,model=virtio -net user"
+QEMU_PORT_OPTS = ",hostfwd=tcp::{port}-:22 "
+QEMU_DISK_IMAGE_OPTS = "-drive file={disk_img},if=virtio "
 QEMU_DISK_IMAGE_OVERLAY_OPTS = (
-    '-drive file={overlay_img},cache=unsafe,if=virtio,index=0 '
+    "-drive file={overlay_img},cache=unsafe,if=virtio,index=0 "
 )
-DEFAULT_RAM = '2048'
-DEFAULT_CPU = '2'
-TIMEOUT_REBOOT = '300'
+DEFAULT_RAM = "2048"
+DEFAULT_CPU = "2"
+TIMEOUT_REBOOT = "300"
 HEADLESS = True
 
 logger = logging.getLogger(__name__)
@@ -93,42 +79,43 @@ class QemuBackend(SshBackend):
         self.find_free_port()
 
     def available(self):
-        """Return true if a qemu exists that matches the provided args.
-
-        """
+        """Return true if a qemu exists that matches the provided args."""
         image_name = self.image_name
-        logger.info('Checking for {}'.format(image_name))
+        logger.info("Checking for {}".format(image_name))
         return image_name in os.listdir(CACHE_DIR)
 
     def create(self, adt_base_path):
         """Create a qemu image."""
 
-        logger.info('Creating qemu image for run.')
-        cmd = '{builder_cmd} -a {arch} -r {release} -o {output} {args}'.format(
+        logger.info("Creating qemu image for run.")
+        cmd = "{builder_cmd} -a {arch} -r {release} -o {output} {args}".format(
             builder_cmd=os.path.join(
-                adt_base_path, 'autopkgtest-buildvm-ubuntu-cloud'
+                adt_base_path, "autopkgtest-buildvm-ubuntu-cloud"
             ),
             arch=self.arch,
             release=self.release,
             output=CACHE_DIR,
-            args=' '.join(self.build_args),
+            args=" ".join(self.build_args),
         )
         run_command_with_logged_output(cmd, shell=True)
 
-        initial_image_name = 'autopkgtest-{}-{}.img'.format(self.release,
-                                                          self.arch)
+        initial_image_name = "autopkgtest-{}-{}.img".format(
+            self.release, self.arch
+        )
         initial_image_path = os.path.join(CACHE_DIR, initial_image_name)
         final_image_path = os.path.join(CACHE_DIR, self.image_name)
         os.rename(initial_image_path, final_image_path)
-        logger.info('Image created.')
+        logger.info("Image created.")
 
     def close(self):
         if self.qemu_runner:
             try:
                 self.shutdown()
             except PermissionError:
-                print('Shutdown sudo command failed. '
-                      'Check password: "{}".'.format(self.password))
+                print(
+                    "Shutdown sudo command failed. "
+                    'Check password: "{}".'.format(self.password)
+                )
                 self.stop_qemu()
             except SSHException:
                 self.stop_qemu()
@@ -144,7 +131,7 @@ class QemuBackend(SshBackend):
         self.connect()
 
     def stop_qemu(self):
-        pid_file = os.path.join(self.working_dir, 'qemu.pid')
+        pid_file = os.path.join(self.working_dir, "qemu.pid")
         with open(pid_file) as f:
             pid = int(f.read().strip())
         os.kill(pid, signal.SIGTERM)
@@ -153,17 +140,24 @@ class QemuBackend(SshBackend):
         if keep_overlay:
             self.qemu_runner = self.launch_qemu(
                 self.image_name,
-                kwargs.get('ram', DEFAULT_RAM),
-                kwargs.get('cpu', DEFAULT_CPU),
-                kwargs.get('headless', HEADLESS),
+                kwargs.get("ram", DEFAULT_RAM),
+                kwargs.get("cpu", DEFAULT_CPU),
+                kwargs.get("headless", HEADLESS),
                 port=self.port,
-                overlay=os.path.join(OVERLAY_DIR,
-                                     self.image_name))
+                overlay=os.path.join(OVERLAY_DIR, self.image_name),
+            )
             super().connect()
             return super().get_adt_run_args()
-        return ['qemu', '-c', DEFAULT_CPU, '--ram-size', DEFAULT_RAM,
-                '--timeout-reboot', TIMEOUT_REBOOT,
-                os.path.join(CACHE_DIR, self.image_name)]
+        return [
+            "qemu",
+            "-c",
+            DEFAULT_CPU,
+            "--ram-size",
+            DEFAULT_RAM,
+            "--timeout-reboot",
+            TIMEOUT_REBOOT,
+            os.path.join(CACHE_DIR, self.image_name),
+        ]
 
     def create_overlay_image(self, overlay_img):
         """Create an overlay image for specified base image."""
@@ -173,26 +167,35 @@ class QemuBackend(SshBackend):
         elif not os.path.isdir(overlay_dir):
             os.makedirs(overlay_dir)
         subprocess.check_call(
-            ['qemu-img', 'create', '-f', 'qcow2', '-b',
-             os.path.join(CACHE_DIR, self.image_name),
-             overlay_img])
-        subprocess.check_call(['sudo', 'chmod', '777', overlay_img])
+            [
+                "qemu-img",
+                "create",
+                "-f",
+                "qcow2",
+                "-b",
+                os.path.join(CACHE_DIR, self.image_name),
+                overlay_img,
+            ]
+        )
+        subprocess.check_call(["sudo", "chmod", "777", overlay_img])
 
     @property
     def name(self):
-        return 'qemu'
+        return "qemu"
 
     def __repr__(self):
-        return '{classname}(release={release})'.format(
-            classname=self.__class__.__name__,
-            release=self.release
+        return "{classname}(release={release})".format(
+            classname=self.__class__.__name__, release=self.release
         )
 
     @staticmethod
     def get_architecture():
         """Return architecture string for system."""
-        return subprocess.check_output(
-            ['dpkg', '--print-architecture']).decode().strip()
+        return (
+            subprocess.check_output(["dpkg", "--print-architecture"])
+            .decode()
+            .strip()
+        )
 
     def get_qemu_path(self):
         """Return path of qemu-system executable for system."""
@@ -200,7 +203,7 @@ class QemuBackend(SshBackend):
             target = QEMU_SYSTEM_AMD64
         else:
             target = QEMU_SYSTEM_I386
-        return subprocess.check_output(['which', target]).decode().strip()
+        return subprocess.check_output(["which", target]).decode().strip()
 
     def get_disk_args(self, overlay):
         """Return qemu-system disk args. If overlay is specified then an overlay
@@ -235,12 +238,21 @@ class QemuBackend(SshBackend):
         self.working_dir = tempfile.mkdtemp()
         runner = threading.Thread(
             target=self._launch_qemu,
-            args=(self.working_dir, img, ram, cpu, headless, port, overlay))
+            args=(self.working_dir, img, ram, cpu, headless, port, overlay),
+        )
         runner.start()
         return runner
 
-    def _launch_qemu(self, working_dir, disk_image_path, ram, cpu, headless,
-                     port=None, overlay=None):
+    def _launch_qemu(
+        self,
+        working_dir,
+        disk_image_path,
+        ram,
+        cpu,
+        headless,
+        port=None,
+        overlay=None,
+    ):
         """Launch qemu-system to install the iso file into the disk image.
         :param working_dir: Working directory to use.
         :param disk_image_path: Path of the disk image file used for
@@ -252,13 +264,14 @@ class QemuBackend(SshBackend):
 
         """
         cmd = self.get_qemu_launch_command(
-            working_dir, disk_image_path, ram, cpu, headless,
-            port, overlay)
-        print(' '.join(cmd))
+            working_dir, disk_image_path, ram, cpu, headless, port, overlay
+        )
+        print(" ".join(cmd))
         subprocess.check_call(cmd)
 
-    def get_qemu_launch_command(self, work_dir, disk_img, ram, cpu,
-                                headless, port=None, overlay=None):
+    def get_qemu_launch_command(
+        self, work_dir, disk_img, ram, cpu, headless, port=None, overlay=None
+    ):
         """Return command to launch qemu process using optional install parameters.
         :param work_dir: Working directory to use.
         :param disk_img: Path of the disk image file used for installation.
@@ -271,8 +284,12 @@ class QemuBackend(SshBackend):
         """
         # Create command base with resource parameters
         cmd = QEMU_LAUNCH_OPTS.format(
-            qemu=self.get_qemu_path(), ram=ram, cpu=cpu, disk_img=disk_img,
-            workdir=work_dir)
+            qemu=self.get_qemu_path(),
+            ram=ram,
+            cpu=cpu,
+            disk_img=disk_img,
+            workdir=work_dir,
+        )
         # Get disk args including overlay image if specified
         cmd += self.get_disk_args(overlay)
         # Add display parameters
@@ -284,5 +301,5 @@ class QemuBackend(SshBackend):
             cmd += QEMU_PORT_OPTS.format(port=port)
         else:
             # Add space to separate options
-            cmd += ' '
+            cmd += " "
         return shlex.split(cmd)
