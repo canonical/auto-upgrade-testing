@@ -1,6 +1,4 @@
-auto-upgrade-testing (0.3~1.gbp528b7b) UNRELEASED; urgency=medium
-
-  ** SNAPSHOT build @528b7b0cfe89f9c98d56baa324a39499e127276f **
+auto-upgrade-testing (0.3) kinetic; urgency=medium
 
   * d/a-u-t.postinst: set sticky bit to /var/cache/auto-upgrade-testing
   * d/copyright: update copyright years
@@ -12,7 +10,7 @@ auto-upgrade-testing (0.3~1.gbp528b7b) UNRELEASED; urgency=medium
   * CI: run tox in a GitHub Actions workflow
   * Linting: apply black and isort
 
- -- Paride Legovini <paride@ubuntu.com>  Tue, 06 Sep 2022 17:05:41 +0200
+ -- Paride Legovini <paride@ubuntu.com>  Tue, 06 Sep 2022 17:23:06 +0200
 
 auto-upgrade-testing (0.2) kinetic; urgency=medium
 
