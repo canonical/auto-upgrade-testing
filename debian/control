@@ -25,6 +25,7 @@ Architecture: all
 Depends:
  autopkgtest (>= 3),
  lxc-templates,
+ python3-junitparser,
  python3-lxc,
  python3-paramiko,
  python3-pexpect,

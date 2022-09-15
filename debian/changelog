@@ -1,3 +1,9 @@
+auto-upgrade-testing (0.3.1) UNRELEASED; urgency=medium
+
+  * debian/control: Add a dependency on python3-junitparser.
+
+ -- Brian Murray <brian@ubuntu.com>  Wed, 14 Sep 2022 17:01:26 -0700
+
 auto-upgrade-testing (0.3) kinetic; urgency=medium
 
   * d/a-u-t.postinst: set sticky bit to /var/cache/auto-upgrade-testing
