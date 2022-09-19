@@ -1,8 +1,12 @@
-auto-upgrade-testing (0.3.1) UNRELEASED; urgency=medium
+auto-upgrade-testing (0.3.1) kinetic; urgency=medium
 
+  [ Brian Murray ]
   * debian/control: Add a dependency on python3-junitparser.
 
- -- Brian Murray <brian@ubuntu.com>  Wed, 14 Sep 2022 17:01:26 -0700
+  [ Paride Legovini ]
+  * d/tests: replace broken `upgrade` test with simple `--help` call
+
+ -- Paride Legovini <paride@ubuntu.com>  Fri, 16 Sep 2022 11:57:02 +0200
 
 auto-upgrade-testing (0.3) kinetic; urgency=medium
 
