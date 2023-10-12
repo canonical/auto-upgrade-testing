@@ -26,6 +26,10 @@ export TEST_RESULTS_DIR
 
 HAVE_REBOOTED=$ADT_REBOOT_MARK
 
+# Get more verbose logging from do-release-upgrade calls
+# made across the script.
+export DEBUG_UPDATE_MANAGER=1
+
 STATUS=0
 
 function upgrade_log() {
