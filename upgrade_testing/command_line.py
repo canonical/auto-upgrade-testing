@@ -128,7 +128,7 @@ def display_results(output_dir, exit_status):
         output.append("\t{test}: {result}".format(test=test, result=result))
         test_case = junitparser.TestCase(test)
         if result == "FAIL":
-            test_case.result = junitparser.Failure("Test Failed")
+            test_case.result = [junitparser.Failure("Test Failed")]
         test_suite.add_testcase(test_case)
 
     output.append("Upgrade result: ")
@@ -145,7 +145,7 @@ def display_results(output_dir, exit_status):
         output.append("\t{test}: {result}".format(test=test, result=result))
         test_case = junitparser.TestCase(test)
         if result == "FAIL":
-            test_case.result = junitparser.Failure("Test Failed")
+            test_case.result = [junitparser.Failure("Test Failed")]
         test_suite.add_testcase(test_case)
 
     xml = junitparser.JUnitXml()
