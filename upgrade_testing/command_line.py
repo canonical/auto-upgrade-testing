@@ -124,7 +124,7 @@ def display_results(output_dir, exit_status):
     test_suite = junitparser.TestSuite("Auto Upgrade Testing")
     output = []
     output.append("Pre script results:")
-    for test, result in results["pre_script_output"].items():
+    for test, result in results.get("pre_script_output", {}).items():
         output.append("\t{test}: {result}".format(test=test, result=result))
         test_case = junitparser.TestCase(test)
         if result == "FAIL":
@@ -141,7 +141,7 @@ def display_results(output_dir, exit_status):
     test_suite.add_testcase(autopkgtest_upgrade)
 
     output.append("Post upgrade test results:")
-    for test, result in results["post_test_output"].items():
+    for test, result in results.get("post_test_output", {}).items():
         output.append("\t{test}: {result}".format(test=test, result=result))
         test_case = junitparser.TestCase(test)
         if result == "FAIL":
