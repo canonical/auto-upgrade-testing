@@ -112,7 +112,7 @@ def get_output_dir(args):
     return full_path
 
 
-def display_results(output_dir):
+def display_results(output_dir, exit_status):
     artifacts_directory = os.path.join(output_dir, "artifacts", "upgrade_run")
     logger.info("Results can be found here: {}".format(artifacts_directory))
 
@@ -130,6 +130,15 @@ def display_results(output_dir):
         if result == "FAIL":
             test_case.result = junitparser.Failure("Test Failed")
         test_suite.add_testcase(test_case)
+
+    output.append("Upgrade result: ")
+    autopkgtest_upgrade = junitparser.TestCase("upgrade")
+    if exit_status.returncode == 0:
+        output.append("\tPASS")
+    else:
+        output.append(f"\tFAIL: {exit_status}")
+        autopkgtest_upgrade.result = [junitparser.Failure(f"{exit_status}")]
+    test_suite.add_testcase(autopkgtest_upgrade)
 
     output.append("Post upgrade test results:")
     for test, result in results["post_test_output"].items():
@@ -165,7 +174,7 @@ def execute_adt_run(
         adt_args,
         keep_overlay,
     )
-    subprocess.check_call(adt_run_command)
+    return subprocess.run(adt_run_command)
 
 
 def get_adt_run_command(
@@ -276,7 +285,7 @@ def main():
             # Setup output dir
             output_dir = get_output_dir(args)
 
-            execute_adt_run(
+            exit_status = execute_adt_run(
                 testsuite,
                 created_files,
                 output_dir,
@@ -286,7 +295,9 @@ def main():
 
             testsuite.provisioning.close()
 
-        display_results(output_dir)
+        display_results(output_dir, exit_status)
+
+        sys.exit(exit_status.returncode)
 
 
 if __name__ == "__main__":
