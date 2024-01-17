@@ -51,24 +51,24 @@ class TestSpecification:
     def _reader(self, details):
         self.name = details["testname"]
 
-        script_location = _get_script_location_path(
+        self.scripts_location = _get_script_location_path(
             details, self.provisioning._provisionconfig_path
         )
 
         self.pre_upgrade_scripts = ScriptStore(
             *_generate_script_list(
-                details["pre_upgrade_scripts"], script_location
+                details["pre_upgrade_scripts"], self.scripts_location
             )
         )
         self.post_upgrade_tests = ScriptStore(
             *_generate_script_list(
-                details["post_upgrade_tests"], script_location
+                details["post_upgrade_tests"], self.scripts_location
             )
         )
 
         backend_args = details.get("backend_args", [])
         self.backend_args = [
-            arg.format(script_location=script_location) for arg in backend_args
+            arg.format(script_location=self.scripts_location) for arg in backend_args
         ]
 
     @property

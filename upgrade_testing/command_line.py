@@ -207,19 +207,11 @@ def get_adt_run_command(
     ] + adt_args.split()
 
     # Copy across the test scripts.
-    pre_dest_dir = "{testbed_location}/pre_scripts/".format(
+    scripts_dest_dir = "{testbed_location}/scripts/".format(
         testbed_location=get_testbed_storage_location()
     )
     copy_cmd = "--copy={src}:{dest}".format(
-        src=testrun_files.pre_scripts, dest=pre_dest_dir
-    )
-    adt_cmd.append(copy_cmd)
-
-    post_dest_dir = "{testbed_location}/post_scripts/".format(
-        testbed_location=get_testbed_storage_location()
-    )
-    copy_cmd = "--copy={src}:{dest}".format(
-        src=testrun_files.post_scripts, dest=post_dest_dir
+        src=testrun_files.scripts, dest=scripts_dest_dir
     )
     adt_cmd.append(copy_cmd)
 

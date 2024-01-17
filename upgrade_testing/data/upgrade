@@ -2,8 +2,7 @@
 
 TMP_LOCATION="/var/tmp/ubuntu-upgrade-testing"
 BASE_LOCATION="${ADT_ARTIFACTS}/upgrade_run_config"
-PRE_SCRIPT_LOCATION="${BASE_LOCATION}/pre_scripts"
-POST_SCRIPT_LOCATION="${BASE_LOCATION}/post_scripts"
+SCRIPTS_LOCATION="${BASE_LOCATION}/scripts"
 # Currently experimenting with using yaml output for run results (test
 # pass/fail etc.) for now, then we'll use something better
 TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
@@ -13,8 +12,7 @@ CANARY_NAME="/tmp/upgrade_script_reboot_canary"
 # Only copy on the first run through
 if [ ! -d "${BASE_LOCATION}" ]; then
    mkdir "${BASE_LOCATION}"
-   mv "${TMP_LOCATION}/pre_scripts" "${BASE_LOCATION}"
-   mv "${TMP_LOCATION}/post_scripts" "${BASE_LOCATION}"
+   mv "${TMP_LOCATION}/scripts" "${BASE_LOCATION}"
    mv "${TMP_LOCATION}/auto_upgrade_test_settings" "${BASE_LOCATION}"
 fi
 
@@ -166,7 +164,7 @@ function pre_tests() {
         mkdir "${this_script_results}"
         export TESTRUN_RESULTS_DIR=$this_script_results
 
-        local FULL_TEST_SCRIPT_PATH="${PRE_SCRIPT_LOCATION}/${test}"
+        local FULL_TEST_SCRIPT_PATH="${SCRIPTS_LOCATION}/${test}"
         upgrade_log "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
         ${FULL_TEST_SCRIPT_PATH}
 
@@ -193,7 +191,7 @@ function post_tests() {
         mkdir "${this_script_results}"
         export TESTRUN_RESULTS_DIR=$this_script_results
 
-        local FULL_TEST_SCRIPT_PATH="${POST_SCRIPT_LOCATION}/${test}"
+        local FULL_TEST_SCRIPT_PATH="${SCRIPTS_LOCATION}/${test}"
         upgrade_log "Running test: ${FULL_TEST_SCRIPT_PATH} -- Results: ${this_script_results}"
 
         ${FULL_TEST_SCRIPT_PATH}

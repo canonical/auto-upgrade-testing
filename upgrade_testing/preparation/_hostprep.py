@@ -47,8 +47,7 @@ TestrunTempFiles = namedtuple(
         "run_config_file",
         "testrun_tmp_dir",
         "unbuilt_dir",
-        "pre_scripts",
-        "post_scripts",
+        "scripts",
     ],
 )
 
@@ -73,11 +72,8 @@ def prepare_test_environment(testsuite):
         unbuilt_dir = _create_autopkg_details(temp_dir)
         logger.info("Unbuilt dir: {}".format(unbuilt_dir))
 
-        pre_path = os.path.join(temp_dir, "pre_scripts")
-        _copy_script_files(testsuite.pre_upgrade_scripts.location, pre_path)
-
-        post_path = os.path.join(temp_dir, "post_scripts")
-        _copy_script_files(testsuite.post_upgrade_tests.location, post_path)
+        scripts_path = os.path.join(temp_dir, "scripts")
+        _copy_script_files(testsuite.scripts_location, scripts_path)
 
         adt_base_path, adt_cmd = _get_adt_path(temp_dir)
 
@@ -88,8 +84,7 @@ def prepare_test_environment(testsuite):
             # Should we create a dir so that it won't interfer?
             unbuilt_dir=temp_dir,
             testrun_tmp_dir=temp_dir,
-            pre_scripts=pre_path,
-            post_scripts=post_path,
+            scripts=scripts_path,
         )
     finally:
         _cleanup_dir(temp_dir)
@@ -115,8 +110,8 @@ def _write_run_config(testsuite, temp_dir):
         config_string = dedent(
             """\
             # Auto Upgrade Test Configuration
-            PRE_TEST_LOCATION="{testbed_location}/pre_scripts"
-            POST_TEST_LOCATION="{testbed_location}/post_scripts"
+            PRE_TEST_LOCATION="{testbed_location}/scripts"
+            POST_TEST_LOCATION="{testbed_location}/scripts"
         """.format(
                 testbed_location=get_testbed_storage_location()
             )
