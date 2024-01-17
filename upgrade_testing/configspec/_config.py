@@ -66,6 +66,8 @@ class TestSpecification:
             )
         )
 
+        self.scripts_data = details.get("scripts_data", None)
+
         backend_args = details.get("backend_args", [])
         self.backend_args = [
             arg.format(scripts_location=self.scripts_location)

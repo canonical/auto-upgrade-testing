@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import json
 import logging
 import os
 import shutil
@@ -74,6 +75,11 @@ def prepare_test_environment(testsuite):
 
         scripts_path = os.path.join(temp_dir, "scripts")
         _copy_script_files(testsuite.scripts_location, scripts_path)
+
+        if hasattr(testsuite, "scripts_data"):
+            data_path = os.path.join(temp_dir, "scripts_data.json")
+            with open(data_path, "w") as f:
+                json.dump(testsuite.scripts_data, f)
 
         adt_base_path, adt_cmd = _get_adt_path(temp_dir)
 
