@@ -68,7 +68,8 @@ class TestSpecification:
 
         backend_args = details.get("backend_args", [])
         self.backend_args = [
-            arg.format(script_location=self.scripts_location) for arg in backend_args
+            arg.format(scripts_location=self.scripts_location)
+            for arg in backend_args
         ]
 
     @property
@@ -90,7 +91,7 @@ def _get_script_location_path(provision_details, provisionfile_path):
     """Return the full path for a script location."""
     # If script_location starts with ./ or ../ then we need to get the abs path
     # of the provision file and append it.
-    location = provision_details.get("script_location", None)
+    location = provision_details.get("scripts_location", None)
     if location is None:
         return location
     if location.startswith("file://."):
