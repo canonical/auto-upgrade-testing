@@ -174,6 +174,8 @@ class QemuBackend(SshBackend):
                 "qcow2",
                 "-b",
                 os.path.join(CACHE_DIR, self.image_name),
+                "-F",
+                "qcow2",
                 overlay_img,
             ]
         )
