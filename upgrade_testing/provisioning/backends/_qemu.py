@@ -33,7 +33,7 @@ from upgrade_testing.provisioning.backends._ssh import SshBackend
 CACHE_DIR = "/var/cache/auto-upgrade-testing"
 OVERLAY_DIR = os.path.join(CACHE_DIR, "overlay")
 QEMU_LAUNCH_OPTS = (
-    "{qemu} -m {ram} -smp {cpu} -pidfile {workdir}/qemu.pid -localtime "
+    "{qemu} -m {ram} -smp {cpu} -pidfile {workdir}/qemu.pid -rtc base=localtime "
     "-cpu core2duo -enable-kvm "
 )
 QEMU_SYSTEM_AMD64 = "qemu-system-x86_64"
@@ -174,6 +174,8 @@ class QemuBackend(SshBackend):
                 "qcow2",
                 "-b",
                 os.path.join(CACHE_DIR, self.image_name),
+                "-F",
+                "qcow2",
                 overlay_img,
             ]
         )

@@ -51,24 +51,27 @@ class TestSpecification:
     def _reader(self, details):
         self.name = details["testname"]
 
-        script_location = _get_script_location_path(
+        self.scripts_location = _get_script_location_path(
             details, self.provisioning._provisionconfig_path
         )
 
         self.pre_upgrade_scripts = ScriptStore(
             *_generate_script_list(
-                details["pre_upgrade_scripts"], script_location
+                details["pre_upgrade_scripts"], self.scripts_location
             )
         )
         self.post_upgrade_tests = ScriptStore(
             *_generate_script_list(
-                details["post_upgrade_tests"], script_location
+                details["post_upgrade_tests"], self.scripts_location
             )
         )
 
+        self.scripts_data = details.get("scripts_data", None)
+
         backend_args = details.get("backend_args", [])
         self.backend_args = [
-            arg.format(script_location=script_location) for arg in backend_args
+            arg.format(scripts_location=self.scripts_location)
+            for arg in backend_args
         ]
 
     @property
@@ -90,7 +93,7 @@ def _get_script_location_path(provision_details, provisionfile_path):
     """Return the full path for a script location."""
     # If script_location starts with ./ or ../ then we need to get the abs path
     # of the provision file and append it.
-    location = provision_details.get("script_location", None)
+    location = provision_details.get("scripts_location", None)
     if location is None:
         return location
     if location.startswith("file://."):
