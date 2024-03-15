@@ -264,9 +264,10 @@ function version_lt() {
 }
 
 function do_upgrade_and_maybe_reboot() {
-    current="${INITIAL_SYSTEM_STATE}"
+    initial="${INITIAL_SYSTEM_STATE}"
+    current="$(_get_running_system_name)"
     target="${POST_SYSTEM_STATE}"
-    upgrade_log "Attempting to upgrade from ${current} to ${target}"
+    upgrade_log "Attempting to upgrade from ${current} to ${target} (started from ${initial})"
 
     do_normal_upgrade
     exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
@@ -305,8 +306,10 @@ function do_normal_upgrade() {
     # the one referenced (-updates or release pocket) in the meta-release file.
     version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ -z "${version}" ]; then
+        upgrade_log "Proposed version not found: falling back to devel release"
         do-release-upgrade -d -f DistUpgradeViewNonInteractive
     else
+        upgrade_log "Proposed version found: ${version}, using it"
         do-release-upgrade -p -f DistUpgradeViewNonInteractive
     fi
 
@@ -339,6 +342,7 @@ function collect_results() {
     cp -fr /var/log/dist-upgrade "${system_details_dir}/dist-upgrade/"
     cp /var/log/dpkg.log "${system_details_dir}/"
     cp -fr /etc/apt/ "${system_details_dir}/apt/"
+    cp -fr /etc/update-manager/ "${system_details_dir}/update-manager/"
 }
 
 function output_running_system() {
