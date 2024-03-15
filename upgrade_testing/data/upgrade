@@ -19,6 +19,7 @@ fi
 # This is put in a known place by the wrapper script and contains the details
 # of above (as they will change each run).
 CONFIG_FILE="${BASE_LOCATION}/auto_upgrade_test_settings"
+# shellcheck disable=SC1090
 source "${CONFIG_FILE}"
 export TEST_RESULTS_DIR
 
@@ -35,6 +36,8 @@ function upgrade_log() {
     echo -e "auto-upgrade [$(date +%R:%S)]: ${output}"
 }
 
+# Called indirectly, through `trap`
+# shellcheck disable=SC2317
 function cleanup() {
     # Collect the results at exit so we cover both successful runs and
     # failures.
@@ -101,7 +104,8 @@ function exit_with_log_if_nonzero() {
 }
 
 function exit_if_not_running_initial_system() {
-    local running_system=$(_get_running_system_name)
+    local running_system
+    running_system=$(_get_running_system_name)
     upgrade_log "Checking that running system (${running_system}) is ${INITIAL_SYSTEM_STATE}"
     if [ "${INITIAL_SYSTEM_STATE}" != "${running_system}" ]; then
         upgrade_log "ERROR: Expected ${INITIAL_SYSTEM_STATE} got ${running_system}"
@@ -112,7 +116,8 @@ function exit_if_not_running_initial_system() {
 
 # Can we de-dupe these methods too?
 function exit_if_not_running_expected_post_system() {
-    local running_system=$(_get_running_system_name)
+    local running_system
+    running_system=$(_get_running_system_name)
     upgrade_log "Checking that running system (${running_system}) is ${POST_SYSTEM_STATE}"
     if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
         upgrade_log "ERROR: Expected ${POST_SYSTEM_STATE} got ${running_system}"
@@ -122,7 +127,8 @@ function exit_if_not_running_expected_post_system() {
 }
 
 function exit_if_havent_upgraded() {
-    local running_system_version=$(get_current_version)
+    local running_system_version
+    running_system_version=$(get_current_version)
     upgrade_log "Checking that an upgrade has occured."
     if [ "${BEFORE_REBOOT_VERSION}" != "" ] && [ "${running_system_version}" == "${BEFORE_REBOOT_VERSION}" ]; then
         upgrade_log "ERROR: Still the same system version after reboot"
@@ -148,7 +154,7 @@ function exit_if_reboot_canary_exists() {
 }
 
 function _get_running_system_name() {
-    echo $(lsb_release -sc)
+    lsb_release -sc
 }
 
 function pre_tests() {
@@ -156,7 +162,7 @@ function pre_tests() {
     #  - create a output dir for the results and make available to script
     #  - Run script
     #  - Log success or failure of script
-    echo "pre_script_output:" >> ${TEST_RESULT_FILE}
+    echo "pre_script_output:" >> "${TEST_RESULT_FILE}"
     success=0
     for test in $PRE_TESTS_TO_RUN; do
 
@@ -170,10 +176,10 @@ function pre_tests() {
 
         local test_result=$?
         if (( test_result != 0 )); then
-            echo "  \"${test}\": FAIL" >> ${TEST_RESULT_FILE}
+            echo "  \"${test}\": FAIL" >> "${TEST_RESULT_FILE}"
             success=1
         else
-            echo "  \"${test}\": PASS" >> ${TEST_RESULT_FILE}
+            echo "  \"${test}\": PASS" >> "${TEST_RESULT_FILE}"
         fi
     done
     return $success
@@ -184,7 +190,7 @@ function post_tests() {
     #  - create a output dir for the results and make available to script
     #  - Run script
     #  - Log success or failure of script
-    echo "post_test_output:" >> $TEST_RESULT_FILE
+    echo "post_test_output:" >> "$TEST_RESULT_FILE"
     success=0
     for test in $POST_TESTS_TO_RUN; do
         local this_script_results="${TEST_RESULTS_DIR}/post_${test}/"
@@ -198,10 +204,10 @@ function post_tests() {
 
         local test_result=$?
         if (( test_result != 0 )); then
-            echo "  \"${test}\": FAIL" >> $TEST_RESULT_FILE
+            echo "  \"${test}\": FAIL" >> "$TEST_RESULT_FILE"
             success=1
         else
-            echo "  \"${test}\": PASS" >> $TEST_RESULT_FILE
+            echo "  \"${test}\": PASS" >> "$TEST_RESULT_FILE"
         fi
     done
     return $success
@@ -217,7 +223,8 @@ function do_setup() {
 function need_another_upgrade() {
     # Check if we're not running the right version
     # If not are we able to upgrade to the right version?
-    local running_system=$(_get_running_system_name)
+    local running_system
+    running_system=$(_get_running_system_name)
     if [ "${POST_SYSTEM_STATE}" != "${running_system}" ]; then
         potential_upgrade_version=$(get_potential_upgrade_version)
         current_version=$(get_current_version)
@@ -231,30 +238,29 @@ function need_another_upgrade() {
 }
 
 function get_current_version() {
-    echo $(lsb_release -rs)
+    lsb_release -rs
 }
 
 function get_potential_upgrade_version() {
     # Attempt to get the version that we would upgrade to. Attempts to use
     # development version if needed.
     # Might return an empty string if there are no upgrade candidates at all.
-    local version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
+    local version
+    version=$(do-release-upgrade -p -c | awk '/New release/ {print $3}' | tr -d \')
     if [ ! "${version}" ]; then
         # Lets try for a development version
-        local version=$(do-release-upgrade -c -d | awk '/New release/ {print $3}' | tr -d \')
-        echo "${version}"
-    else
-        echo "${version}"
+        version=$(do-release-upgrade -c -d | awk '/New release/ {print $3}' | tr -d \')
     fi
+    echo "${version}"
 }
 
 # version_lte and version_lt taken from: http://stackoverflow.com/a/4024263
 function version_lte() {
-    [  "$1" = "`echo -e "$1\n$2" | sort --version-sort | head -n1`" ]
+    [  "$1" = "$(echo -e "$1\n$2" | sort --version-sort | head -n1)" ]
 }
 
 function version_lt() {
-    [ "$1" = "$2" ] && return 1 || version_lte $1 $2
+    ([ "$1" = "$2" ] && return 1) || version_lte "$1" "$2"
 }
 
 function do_upgrade_and_maybe_reboot() {
@@ -271,34 +277,6 @@ function do_upgrade_and_maybe_reboot() {
     upgrade_log "Upgrading complete."
 }
 
-function have_internet_connection() {
-    ping_count=0
-    max_ping=5
-    while  ! ping -c 1 launchpad.net > /dev/null 2>&1 && ((ping_count < max_ping)); do
-        update_log "Failed to ping launchpad.net. Seems there is no Internet connection"
-        ((ping_count++))
-        sleep 1
-    done
-    echo "Ping count: ${ping_count}"
-    if ((ping_count==max_ping)); then
-        return 1
-    else
-        return 0
-    fi
-
-}
-
-function reboot_prepare() {
-    prepare_function="/tmp/autopkgtest-reboot-prepare"
-    if [ -f ${prepare_function} ]; then
-        upgrade_log "Preparing the system for reboot."
-        $($prepare_function 'upgradetests')
-        sleep 30
-    else
-        upgrade_log "This testbed does not support rebooting."
-        exit 1
-    fi
-}
 
 function do_normal_upgrade() {
     upgrade_log "Starting machine upgrade."
@@ -344,13 +322,15 @@ function maybe_reboot() {
             # lxc reboot is doing something different to expected.
             rm "${CANARY_NAME}"
         fi
-        $($reboot_function 'upgradetests')
+        eval $reboot_function 'upgradetests'
     else
         upgrade_log "This testbed does not support rebooting."
         exit 1
     fi
 }
 
+# Called indirectly, through `trap`
+# shellcheck disable=SC2317
 function collect_results() {
     # Move any files of interest into $TEST_RESULTS_DIR
     upgrade_log "Collecting system details."
