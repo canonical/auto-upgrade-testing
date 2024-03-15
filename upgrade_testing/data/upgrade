@@ -290,10 +290,13 @@ function do_normal_upgrade() {
 
     # Allow upgrade from lts to non-lts if there's not lts to upgrade to
     local version
+    local dev_version
     if grep '^Prompt=lts' /etc/update-manager/release-upgrades; then
         # Check for an LTS to LTS upgrade
-        version=$(do-release-upgrade -d -c | awk '/New release/ {print $3}' | tr -d \')
-        if [ -z "${version}" ]; then
+        version=$(do-release-upgrade -c | awk '/New release/ {print $3}' | tr -d \')
+        dev_version=$(do-release-upgrade -d -c | awk '/New release/ {print $3}' | tr -d \')
+        if [ -z "${version}" ] && [ -z "${dev_version}" ]; then
+            upgrade_log "No LTS version available, allowing 'normal' upgrades"
             # No LTS release to upgrade to. Enable non-LTS upgrades.
             sed -i 's/Prompt=lts/Prompt=normal/' /etc/update-manager/release-upgrades
         fi
