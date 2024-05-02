@@ -240,9 +240,11 @@ def main():
 
     try:
         test_def_details = definition_reader(args.config)
-    except KeyError:
+    except KeyError as e:
         logger.error(
-            "Unable to parse configuration file: {}".format(args.config)
+            "Unable to parse configuration file ({}): key {} not found".format(
+                args.config, e
+            )
         )
         sys.exit(1)
     except ValueError as e:

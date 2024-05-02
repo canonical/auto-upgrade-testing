@@ -97,6 +97,9 @@ class LXCProvisionSpecification(ProvisionSpecification):
         self.distribution = provision_config.get("distribution", "ubuntu")
         self.releases = provision_config["releases"]
         self.arch = provision_config["arch"]
+        self.do_release_upgrade_prompt = provision_config.get(
+            "do_release_upgrade_prompt", ""
+        )
         self._provisionconfig_path = provision_path
 
         self.backend = backends.LXCBackend(
@@ -137,6 +140,9 @@ class QemuProvisionSpecification(ProvisionSpecification):
 
         self.releases = provision_config["releases"]
         self.arch = provision_config.get("arch", "amd64")
+        self.do_release_upgrade_prompt = provision_config.get(
+            "do_release_upgrade_prompt", ""
+        )
         self.image_name = provision_config.get(
             "image_name",
             "autopkgtest-{}-{}-cloud.img".format(

@@ -143,6 +143,11 @@ def _write_run_config(testsuite, temp_dir):
         f.write(
             "RUNNING_BACKEND={}\n".format(testsuite.provisioning.backend_name)
         )
+        f.write(
+            "DO_RELEASE_UPGRADE_PROMPT={}\n".format(
+                testsuite.provisioning.do_release_upgrade_prompt
+            )
+        )
     return run_config_file
 
 
