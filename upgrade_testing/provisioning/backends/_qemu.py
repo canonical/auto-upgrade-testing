@@ -50,7 +50,7 @@ QEMU_DISK_IMAGE_OPTS = "-drive file={disk_img},if=virtio "
 QEMU_DISK_IMAGE_OVERLAY_OPTS = (
     "-drive file={overlay_img},cache=unsafe,if=virtio,index=0 "
 )
-DEFAULT_RAM = "2048"
+DEFAULT_RAM = "3072"
 DEFAULT_CPU = "2"
 TIMEOUT_REBOOT = "300"
 HEADLESS = True
