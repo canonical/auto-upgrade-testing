@@ -301,6 +301,9 @@ function do_normal_upgrade() {
     apt-get -y dist-upgrade
     apt-get -y install openssh-server update-manager-core
 
+    kernel=$(uname -r)
+    pre_upgrade_kernel_check=$(dpkg -l linux-*-$kernel)
+
     # Allow upgrade from lts to non-lts if there's not lts to upgrade to
     local version
     local dev_version
@@ -334,6 +337,15 @@ function do_normal_upgrade() {
     else
         upgrade_log "Proposed version found: ${version}, using it"
         do-release-upgrade -p -f DistUpgradeViewNonInteractive
+    fi
+    post_upgrade_kernel_check=$(dpkg -l linux-*-$kernel)
+    if [[ "${pre_upgrade_kernel_check}" != "${post_upgrade_kernel_check}" ]]; then
+        upgrade_log "Different packages are installed for the kernel booted during upgrade!"
+        upgrade_log "Pre upgrade kernel was ${pre_upgrade_kernel_check}"
+        upgrade_log "Post upgrade kernel was ${post_upgrade_kernel_check}"
+        STATUS=1
+    else
+        upgrade_log "Kernel check okay!"
     fi
     check_no_apt_errors
 
