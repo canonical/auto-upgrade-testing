@@ -90,8 +90,20 @@ function main() {
         post_tests
         STATUS=$?
     fi
+    check_no_apt_errors
 
     exit $STATUS
+}
+
+function check_no_apt_errors() {
+    upgrade_log "Checking that the running system has a healthy apt state"
+    apt-get check
+    STATUS=$?
+    if [[ "${STATUS}" == "0" ]]; then
+        upgrade_log "apt is in a healthy state!"
+    else
+        upgrade_log "apt is not in a healthy state!"
+    fi
 }
 
 function exit_with_log_if_nonzero() {
@@ -276,6 +288,7 @@ function do_upgrade_and_maybe_reboot() {
     exit_with_log_if_nonzero $STATUS "ERROR: Something went wrong with the upgrade."
 
     upgrade_log "Upgrading complete."
+    check_no_apt_errors
 }
 
 
@@ -322,6 +335,7 @@ function do_normal_upgrade() {
         upgrade_log "Proposed version found: ${version}, using it"
         do-release-upgrade -p -f DistUpgradeViewNonInteractive
     fi
+    check_no_apt_errors
 
     STATUS=$?
 }
