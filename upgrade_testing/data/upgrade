@@ -230,6 +230,9 @@ function do_setup() {
     # Make sure the output results file is available and proper yaml.
     mkdir "${TEST_RESULTS_DIR}"
     echo "---" >> "${TEST_RESULT_FILE}"
+
+    upgrade_log "Make sure /tmp is a tmpfs."
+    rm -f "/etc/systemd/system/tmp.mount"
 }
 
 function need_another_upgrade() {
