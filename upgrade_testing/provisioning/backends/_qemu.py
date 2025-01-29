@@ -88,15 +88,17 @@ class QemuBackend(SshBackend):
         """Create a qemu image."""
 
         logger.info("Creating qemu image for run.")
-        cmd = "{builder_cmd} -a {arch} -r {release} -o {output} {args}".format(
+        cmd = "{builder_cmd} -a {arch} -r {release} -o {output} {verbose} {args}".format(
             builder_cmd=os.path.join(
                 adt_base_path, "autopkgtest-buildvm-ubuntu-cloud"
             ),
             arch=self.arch,
             release=self.release,
             output=CACHE_DIR,
+            verbose="-v" if self.verbose else "",
             args=" ".join(self.build_args),
         )
+            
         run_command_with_logged_output(cmd, shell=True)
 
         initial_image_name = "autopkgtest-{}-{}.img".format(

@@ -64,6 +64,9 @@ class ProvisionSpecification:
         """Return list with the adt args for this provisioning backend."""
         raise NotImplementedError()
 
+    def set_verbose(self, verbose):
+        self.backend.set_verbose(verbose)
+
     @staticmethod
     def from_testspec(spec, spec_path):
         backend_name = spec["provisioning"]["backend"]
@@ -156,6 +159,8 @@ class QemuProvisionSpecification(ProvisionSpecification):
             provision_config.get("build_args", []), provision_config_directory
         )
         logger.info("Using build args: {}".format(self.build_args))
+
+        self.verbose = False
 
         self.backend = backends.QemuBackend(
             self.initial_state,
