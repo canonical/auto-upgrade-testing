@@ -62,7 +62,7 @@ class QemuBackend(SshBackend):
 
     # We can change the Backends to require just what they need. In this case
     # it would be distribution, release name (, arch)
-    def __init__(self, release, arch, image_name, build_args=[]):
+    def __init__(self, release, arch, image_name, packages, build_args=[]):
         """Provide backend capabilities as requested in the provision spec.
 
         :param provision_spec: ProvisionSpecification object containing backend
@@ -74,7 +74,8 @@ class QemuBackend(SshBackend):
         self.arch = arch
         self.image_name = image_name
         self.build_args = build_args
-        self.working_dir = None
+        self.packages = packages
+        self.working_dir = tempfile.mkdtemp()
         self.qemu_runner = None
         self.find_free_port()
 
@@ -88,17 +89,18 @@ class QemuBackend(SshBackend):
         """Create a qemu image."""
 
         logger.info("Creating qemu image for run.")
-        cmd = "{builder_cmd} -a {arch} -r {release} -o {output} {verbose} {args}".format(
+        cmd = "{builder_cmd} -a {arch} -r {release} -o {output} --userdata {userdata} {verbose} {args}".format(
             builder_cmd=os.path.join(
                 adt_base_path, "autopkgtest-buildvm-ubuntu-cloud"
             ),
             arch=self.arch,
             release=self.release,
             output=CACHE_DIR,
+            userdata=self.create_custom_cloud_init(),
             verbose="-v" if self.verbose else "",
             args=" ".join(self.build_args),
         )
-            
+
         run_command_with_logged_output(cmd, shell=True)
 
         initial_image_name = "autopkgtest-{}-{}.img".format(
@@ -160,6 +162,63 @@ class QemuBackend(SshBackend):
             TIMEOUT_REBOOT,
             os.path.join(CACHE_DIR, self.image_name),
         ]
+
+    def create_custom_cloud_init(self):
+        userdata = """#cloud-config
+timezone: UTC
+password: ubuntu
+chpasswd: { expire: False }
+ssh_pwauth: True
+manage_etc_hosts: True
+apt:
+  primary:
+    - arches: default
+      uri: http://archive.ubuntu.com/ubuntu
+  proxy:
+package_reboot_if_required: true
+package_update: true
+package_upgrade: true
+packages:
+ # linux-generic is necessary to get a graphical session
+ - linux-generic
+ - ubuntu-release-upgrader-core
+%(packages)s
+write_files:
+ - content: |
+     [Unit]
+     Description=auto-upgrade-testing root shell on %%I
+     ConditionPathExists=/dev/%%I
+
+     [Service]
+     ExecStart=/bin/sh
+     StandardInput=tty-fail
+     StandardOutput=tty
+     StandardError=tty
+     TTYPath=/dev/%%I
+     SendSIGHUP=yes
+     # ignore I/O errors on unusable tty
+     SuccessExitStatus=0 208 SIGHUP SIGINT SIGTERM SIGPIPE
+
+     [Install]
+     WantedBy=multi-user.target
+   path: /etc/systemd/system/auto-upgrade-testing@.service
+runcmd:
+ # configure serial console for autopkgtest access
+ - ln -sf /dev/null /etc/systemd/system/auto-upgrade-testing.service
+ - ln -sf /etc/systemd/system/auto-upgrade-testing@.service /etc/systemd/system/multi-user.target.wants/auto-upgrade-testing@ttyS1.service
+ - ln -sf /etc/systemd/system/auto-upgrade-testing@.service /etc/systemd/system/multi-user.target.wants/auto-upgrade-testing@hvc1.service
+power_state:
+  delay: now
+  mode: poweroff
+  message: Image creation finished, powering off
+  timeout: 2
+  condition: true""" % {
+            "packages": "\n".join([f" - {x}" for x in self.packages] or [])
+        }
+        userdata_path = os.path.join(self.working_dir, "user-data")
+        with open(userdata_path, "w") as f:
+            f.write(userdata)
+        return userdata_path
 
     def create_overlay_image(self, overlay_img):
         """Create an overlay image for specified base image."""
@@ -239,7 +298,6 @@ class QemuBackend(SshBackend):
         """Boot the qemu from a different thread to stop this thread from being
         blocked whilst the qemu is running.
         """
-        self.working_dir = tempfile.mkdtemp()
         runner = threading.Thread(
             target=self._launch_qemu,
             args=(self.working_dir, img, ram, cpu, headless, port, overlay),

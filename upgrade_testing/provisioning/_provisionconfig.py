@@ -160,12 +160,14 @@ class QemuProvisionSpecification(ProvisionSpecification):
         )
         logger.info("Using build args: {}".format(self.build_args))
 
+        self.packages = provision_config.get("packages")
         self.verbose = False
 
         self.backend = backends.QemuBackend(
             self.initial_state,
             self.arch,
             self.image_name,
+            self.packages,
             self.build_args,
         )
 
