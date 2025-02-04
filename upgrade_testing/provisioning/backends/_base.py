@@ -45,6 +45,9 @@ class ProviderBackend:
         """Return a list containing required args to pass to autopkgtest."""
         raise NotImplementedError()
 
+    def set_verbose(self, verbose):
+        self.verbose = verbose
+
     @property
     def name(self):
         raise NotImplementedError()

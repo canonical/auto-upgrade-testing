@@ -65,6 +65,18 @@ def parse_args():
         help="Provision the requested backend",
     )
     parser.add_argument(
+        "--verbose-provision",
+        "-v",
+        action="store_true",
+        help="Provision with with build output enabled.",
+    )
+    parser.add_argument(
+        "--force-provision",
+        "-f",
+        action="store_true",
+        help="Provision a new image regardless of cache.",
+    )
+    parser.add_argument(
         "--results-dir",
         help="Directory to store results generated during the run.",
     )
@@ -262,9 +274,13 @@ def main():
         # Note this could raise an exception.
 
         with prepare_test_environment(testsuite) as created_files:
-            if not testsuite.provisioning.backend_available():
+            if (
+                args.force_provision
+                or not testsuite.provisioning.backend_available()
+            ):
                 if args.provision:
                     logger.debug("Provising backend.")
+                    testsuite.provisioning.set_verbose(args.verbose_provision)
                     testsuite.provisioning.create(created_files.adt_base_path)
                 else:
                     logger.error(
