@@ -181,7 +181,11 @@ package_upgrade: true
 packages:
  # linux-generic is necessary to get a graphical session
  - linux-generic
+ # packages required for testing
+ - apport-noui
+ - eatmydata
  - ubuntu-release-upgrader-core
+ # packages wanted by profile
 %(packages)s
 write_files:
  - content: |
