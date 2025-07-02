@@ -8,6 +8,7 @@ SCRIPTS_LOCATION="${BASE_LOCATION}/scripts"
 TEST_RESULTS_DIR="${ADT_ARTIFACTS}/upgrade_run"
 TEST_RESULT_FILE="${TEST_RESULTS_DIR}/runner_results.yaml"
 CANARY_NAME="/tmp/upgrade_script_reboot_canary"
+INITIAL_TESTBED_READY_FLAG="${TMP_LOCATION}/initial_testbed_ready"
 
 # Only copy on the first run through
 if [ ! -d "${BASE_LOCATION}" ]; then
@@ -52,6 +53,8 @@ function main() {
     trap cleanup EXIT
 
     upgrade_log "Running on ${RUNNING_BACKEND}"
+
+    initial_testbed_setup
 
     if [ -z "${HAVE_REBOOTED}" ]; then
         upgrade_log "Beginning from the start."
@@ -223,6 +226,25 @@ function post_tests() {
         fi
     done
     return $success
+}
+
+function initial_testbed_setup() {
+    if ! [ -f "${INITIAL_TESTBED_READY_FLAG}" ]; then
+        export DEBIAN_FRONTEND=noninteractive
+        upgrade_log "Making sure initial testbed is fully up to date"
+        apt update -y && apt dist-upgrade -y
+        if [ -f /var/run/reboot-required ]; then
+            upgrade_log "System needs reboot before upgrading"
+            maybe_reboot
+        fi
+        if [ -n "${HAVE_REBOOTED}" ]; then
+            # Clear out reboot status to let the upgrade take over from the start
+            upgrade_log "Clearing out reboot flag"
+            HAVE_REBOOTED=""
+        fi
+        upgrade_log "Initial testbed is fully ready"
+        touch "${INITIAL_TESTBED_READY_FLAG}"
+    fi
 }
 
 function do_setup() {
