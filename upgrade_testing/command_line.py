@@ -125,7 +125,7 @@ def get_output_dir(args):
 
 
 def display_results(output_dir, exit_status):
-    artifacts_directory = os.path.join(output_dir, "artifacts", "upgrade_run")
+    artifacts_directory = os.path.join(output_dir, "artifacts", "upgrade/upgrade_run")
     logger.info("Results can be found here: {}".format(artifacts_directory))
 
     results_yaml = os.path.join(artifacts_directory, "runner_results.yaml")
